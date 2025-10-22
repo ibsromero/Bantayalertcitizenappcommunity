@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, Mail, Lock, Eye, EyeOff, Info, Loader2 } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, Info, Loader2, Building2, UserCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -10,17 +10,31 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { toast } from "sonner@2.0.3";
 import { signIn, signUp } from "../utils/supabaseClient";
 import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+
+export type UserType = "citizen" | "department";
+export type DepartmentRole = "lgu" | "emergency_responder" | "healthcare" | "disaster_management";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (email: string, name: string, accessToken?: string) => void;
+  onLogin: (email: string, name: string, accessToken?: string, userType?: UserType, departmentRole?: DepartmentRole) => void;
 }
+
+// Department credentials
+const DEPARTMENT_CREDENTIALS = {
+  lgu: { email: "lgu@bantayalert.ph", password: "LGU2025!Manila", name: "LGU Administrator" },
+  emergency_responder: { email: "responder@bantayalert.ph", password: "RESP2025!911", name: "Emergency Responder" },
+  healthcare: { email: "healthcare@bantayalert.ph", password: "HEALTH2025!Care", name: "Healthcare Provider" },
+  disaster_management: { email: "ndrrmc@bantayalert.ph", password: "NDRRMC2025!PH", name: "Disaster Management" }
+};
 
 export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [userType, setUserType] = useState<UserType>("citizen");
+  const [departmentRole, setDepartmentRole] = useState<DepartmentRole>("lgu");
   const [loginForm, setLoginForm] = useState({ email: "demo@bantayalert.ph", password: "demo123" });
   const [signupForm, setSignupForm] = useState({
     name: "",
@@ -34,9 +48,71 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
     setIsLoading(true);
 
     try {
+      // Check for department credentials
+      if (userType === "department") {
+        try {
+          const { projectId, publicAnonKey } = await import("../utils/supabase/info");
+          
+          const response = await fetch(
+            `https://${projectId}.supabase.co/functions/v1/make-server-dd0f68d8/department/signin`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${publicAnonKey}`
+              },
+              body: JSON.stringify({
+                email: loginForm.email,
+                password: loginForm.password
+              })
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || data.error) {
+            toast.error("Invalid department credentials", {
+              description: "Please check your email and password",
+            });
+            setIsLoading(false);
+            return;
+          }
+
+          console.log("Department login successful:", {
+            name: data.session.name,
+            role: data.session.role,
+            tokenPrefix: data.session.token?.substring(0, 15) + '...'
+          });
+
+          // Store session token
+          onLogin(
+            data.session.email, 
+            data.session.name, 
+            data.session.token, 
+            "department", 
+            data.session.role
+          );
+          
+          toast.success(`Welcome ${data.session.name}!`, {
+            description: `Signed in to ${data.session.department}`,
+          });
+          onClose();
+          setIsLoading(false);
+          return;
+        } catch (error) {
+          console.error("Department signin error:", error);
+          toast.error("Sign-in failed", {
+            description: "Could not connect to server. Please try again.",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Citizen login
       // Demo credentials for testing
       if (loginForm.email === "demo@bantayalert.ph" && loginForm.password === "demo123") {
-        onLogin(loginForm.email, "Juan Dela Cruz");
+        onLogin(loginForm.email, "Juan Dela Cruz", undefined, "citizen");
         toast.success("Welcome back!", {
           description: "Successfully signed in to BantayAlert (Demo Mode)",
         });
@@ -53,7 +129,7 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
         if (loginForm.email && loginForm.password) {
           const name = loginForm.email.split('@')[0];
           const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-          onLogin(loginForm.email, capitalizedName);
+          onLogin(loginForm.email, capitalizedName, undefined, "citizen");
           toast.success("Welcome!", {
             description: "Successfully signed in to BantayAlert (Demo Mode)",
           });
@@ -65,7 +141,7 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
         }
       } else if (data?.session) {
         const userName = data.user.user_metadata?.name || data.user.email?.split('@')[0] || "User";
-        onLogin(data.user.email || "", userName, data.session.access_token);
+        onLogin(data.user.email || "", userName, data.session.access_token, "citizen");
         toast.success("Welcome back!", {
           description: "Successfully signed in to BantayAlert",
         });
@@ -106,20 +182,20 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
 
       if (error) {
         // Fallback to demo mode
-        onLogin(signupForm.email, signupForm.name);
+        onLogin(signupForm.email, signupForm.name, undefined, "citizen");
         toast.success("Account created!", {
           description: "Welcome to BantayAlert (Demo Mode)",
         });
         onClose();
       } else if (data?.session) {
-        onLogin(signupForm.email, signupForm.name, data.session.access_token);
+        onLogin(signupForm.email, signupForm.name, data.session.access_token, "citizen");
         toast.success("Account created!", {
           description: "Welcome to BantayAlert! Please check your email to verify your account.",
         });
         onClose();
       } else {
         // No session but no error - still allow demo mode
-        onLogin(signupForm.email, signupForm.name);
+        onLogin(signupForm.email, signupForm.name, undefined, "citizen");
         toast.success("Account created!", {
           description: "Welcome to BantayAlert!",
         });
@@ -128,7 +204,7 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
     } catch (error) {
       console.error("Signup error:", error);
       // Still allow demo mode on error
-      onLogin(signupForm.email, signupForm.name);
+      onLogin(signupForm.email, signupForm.name, undefined, "citizen");
       toast.success("Account created!", {
         description: "Welcome to BantayAlert (Demo Mode)",
       });
@@ -163,10 +239,57 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* User Type Selection */}
+                <div className="space-y-2">
+                  <Label>Account Type</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant={userType === "citizen" ? "default" : "outline"}
+                      className="w-full"
+                      onClick={() => setUserType("citizen")}
+                    >
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      Citizen
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={userType === "department" ? "default" : "outline"}
+                      className="w-full"
+                      onClick={() => setUserType("department")}
+                    >
+                      <Building2 className="mr-2 h-4 w-4" />
+                      Department
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Department Role Selection */}
+                {userType === "department" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="department-role">Department Role</Label>
+                    <Select value={departmentRole} onValueChange={(value: DepartmentRole) => setDepartmentRole(value)}>
+                      <SelectTrigger id="department-role">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lgu">LGU Administrator</SelectItem>
+                        <SelectItem value="emergency_responder">Emergency Responder</SelectItem>
+                        <SelectItem value="healthcare">Healthcare Provider</SelectItem>
+                        <SelectItem value="disaster_management">Disaster Management (NDRRMC)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription className="text-xs">
-                    Demo: Use <strong>demo@bantayalert.ph</strong> / <strong>demo123</strong>
+                    {userType === "citizen" ? (
+                      <>Demo: Use <strong>demo@bantayalert.ph</strong> / <strong>demo123</strong></>
+                    ) : (
+                      <>Department credentials are pre-configured. Contact admin for access.</>
+                    )}
                   </AlertDescription>
                 </Alert>
                 

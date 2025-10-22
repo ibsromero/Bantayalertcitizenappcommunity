@@ -32,7 +32,8 @@ export function NotificationSettingsDialog({ isOpen, onClose, user }: Notificati
   const loadSettings = async () => {
     try {
       // Check if user has access token (authenticated with Supabase)
-      if (!user?.accessToken) {
+      // Department users have dept_ tokens which aren't Supabase auth tokens
+      if (!user?.accessToken || user.accessToken.startsWith('dept_')) {
         console.log('Demo mode - using default notification settings');
         return;
       }
@@ -58,8 +59,9 @@ export function NotificationSettingsDialog({ isOpen, onClose, user }: Notificati
 
     try {
       // Check if user has access token (authenticated with Supabase)
-      if (!user?.accessToken) {
-        // Demo mode - just show success message
+      // Department users have dept_ tokens which aren't Supabase auth tokens
+      if (!user?.accessToken || user.accessToken.startsWith('dept_')) {
+        // Demo mode or department user - just show success message
         toast.success("Settings updated", {
           description: "Your notification preferences have been saved (Demo Mode)"
         });

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Header } from "./components/Header";
 import { Navigation } from "./components/Navigation";
 import { Dashboard } from "./components/Dashboard";
+import { DepartmentDashboard } from "./components/DepartmentDashboard";
 import { EmergencyContacts } from "./components/EmergencyContacts";
 import { PreparationChecklist } from "./components/PreparationChecklist";
 import { EmergencyKit } from "./components/EmergencyKit";
@@ -12,12 +13,30 @@ import { Toaster } from "./components/ui/sonner";
 import { getFromStorage, saveToStorage } from "./utils/storageUtils";
 import { supabase } from "./utils/supabaseClient";
 import { initializeUserData, autoSync } from "./utils/dataSyncUtils";
+import { initializeDepartmentData } from "./utils/initializeDepartmentData";
+import type { UserType, DepartmentRole } from "./components/AuthModal";
 
 export default function App() {
+  // Initialize department sample data on app load
+  useEffect(() => {
+    initializeDepartmentData();
+  }, []);
   const [currentSection, setCurrentSection] = useState("dashboard");
-  const [user, setUser] = useState<{ name: string; email: string; accessToken?: string } | null>(() => {
+  const [user, setUser] = useState<{ 
+    name: string; 
+    email: string; 
+    accessToken?: string;
+    userType?: UserType;
+    departmentRole?: DepartmentRole;
+  } | null>(() => {
     // Try to restore user session from localStorage
-    const savedUser = getFromStorage<{ name: string; email: string; accessToken?: string }>("USER");
+    const savedUser = getFromStorage<{ 
+      name: string; 
+      email: string; 
+      accessToken?: string;
+      userType?: UserType;
+      departmentRole?: DepartmentRole;
+    }>("USER");
     return savedUser;
   });
   const [isInitializing, setIsInitializing] = useState(false);
@@ -96,13 +115,19 @@ export default function App() {
     setCurrentSection("dashboard");
   };
 
-  const handleLogin = async (email: string, name: string, accessToken?: string) => {
-    const userData = { email, name, accessToken };
+  const handleLogin = async (
+    email: string, 
+    name: string, 
+    accessToken?: string, 
+    userType?: UserType,
+    departmentRole?: DepartmentRole
+  ) => {
+    const userData = { email, name, accessToken, userType, departmentRole };
     setUser(userData);
     saveToStorage("USER", userData);
     
-    // Initialize data for the logged-in user (only if we have a real access token)
-    if (accessToken) {
+    // Initialize data for the logged-in user (only if we have a real access token and is citizen)
+    if (accessToken && userType === "citizen") {
       try {
         const { data: { user } } = await supabase.auth.getUser(accessToken);
         if (user) {
@@ -115,6 +140,9 @@ export default function App() {
         setIsInitializing(false);
       }
     }
+    
+    // Reset to dashboard when logging in
+    setCurrentSection("dashboard");
   };
 
   const handleLogout = async () => {
@@ -125,6 +153,12 @@ export default function App() {
   };
 
   const renderCurrentSection = () => {
+    // Department users see department dashboard
+    if (user?.userType === "department") {
+      return <DepartmentDashboard user={user} />;
+    }
+
+    // Citizen users see regular sections
     switch (currentSection) {
       case "emergency":
         return <EmergencyContacts user={user} />;
@@ -151,7 +185,10 @@ export default function App() {
         onLogout={handleLogout}
         onNavigate={handleNavigate}
       />
-      <Navigation currentSection={currentSection} onBack={handleBack} />
+      {/* Only show navigation for citizen users */}
+      {user?.userType !== "department" && (
+        <Navigation currentSection={currentSection} onBack={handleBack} />
+      )}
       <main className="pb-safe">
         {renderCurrentSection()}
       </main>

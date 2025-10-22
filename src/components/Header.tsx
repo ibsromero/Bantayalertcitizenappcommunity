@@ -4,14 +4,15 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { AuthModal } from "./AuthModal";
+import type { UserType, DepartmentRole } from "./AuthModal";
 import { NotificationsDialog } from "./NotificationsDialog";
 import { SettingsHub } from "./SettingsHub";
 import { ProfileDialog } from "./ProfileDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 
 interface HeaderProps {
-  user: { name: string; email: string; accessToken?: string } | null;
-  onLogin: (email: string, name: string, accessToken?: string) => void;
+  user: { name: string; email: string; accessToken?: string; userType?: UserType; departmentRole?: DepartmentRole } | null;
+  onLogin: (email: string, name: string, accessToken?: string, userType?: UserType, departmentRole?: DepartmentRole) => void;
   onLogout: () => void;
   onNavigate?: (section: string) => void;
 }
@@ -44,7 +45,7 @@ export function Header({ user, onLogin, onLogout, onNavigate }: HeaderProps) {
   const handleProfileUpdate = (name: string) => {
     // Update the local user state with new name
     if (user) {
-      onLogin(user.email, name, user.accessToken);
+      onLogin(user.email, name, user.accessToken, user.userType, user.departmentRole);
     }
   };
 
