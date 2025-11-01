@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BantayAlert Token Clearer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .status {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #d1fae5;
+            border-left-color: #10b981;
+        }
+        .status.error {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .info-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .info-box h3 {
+            color: #374151;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        .info-box ol {
+            margin-left: 20px;
+            color: #6b7280;
+            line-height: 1.8;
+        }
+        .token-info {
+            font-family: 'Courier New', monospace;
+            background: #1f2937;
+            color: #10b981;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #dbeafe;
+            color: #1e40af;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        .badge.invalid {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .badge.valid {
+            background: #d1fae5;
+            color: #065f46;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 BantayAlert Token Clearer</h1>
+        <p class="subtitle">Emergency token and session data management</p>
+        
+        <div id="currentStatus"></div>
+        
+        <button id="clearBtn" onclick="clearAllData()">
+            🚨 Clear All Tokens & Data
+        </button>
+        
+        <div id="result"></div>
+        
+        <div class="info-box">
+            <h3>📋 After Clearing Tokens:</h3>
+            <ol>
+                <li>Close this page</li>
+                <li>Return to BantayAlert application</li>
+                <li>Refresh the page (Ctrl+R or Cmd+R)</li>
+                <li>Sign in again with your credentials</li>
+                <li>You'll receive a fresh, valid token</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function checkCurrentToken() {
+            try {
+                const userStr = localStorage.getItem('USER');
+                if (!userStr) {
+                    return {
+                        status: 'none',
+                        message: 'No user session found'
+                    };
+                }
+                
+                const user = JSON.parse(userStr);
+                
+                if (!user.accessToken) {
+                    return {
+                        status: 'no-token',
+                        message: 'User session exists but no token found'
+                    };
+                }
+                
+                const token = user.accessToken;
+                
+                // Check if department token
+                if (token.startsWith('dept_')) {
+                    const hasPeriod = token.includes('.');
+                    const parts = token.substring(5).split('.');
+                    const isValid = hasPeriod && parts.length === 2;
+                    
+                    return {
+                        status: isValid ? 'valid' : 'invalid',
+                        message: isValid ? 'Valid department token format' : 'Invalid department token format',
+                        token: token.substring(0, 50) + '...',
+                        details: {
+                            type: 'Department',
+                            hasPrefix: token.startsWith('dept_'),
+                            hasPeriod: hasPeriod,
+                            partsCount: parts.length,
+                            userType: user.userType,
+                            email: user.email
+                        }
+                    };
+                }
+                
+                // Supabase token
+                return {
+                    status: 'valid',
+                    message: 'Valid Supabase session token',
+                    token: token.substring(0, 50) + '...',
+                    details: {
+                        type: 'Citizen/Supabase',
+                        userType: user.userType,
+                        email: user.email
+                    }
+                };
+                
+            } catch (error) {
+                return {
+                    status: 'error',
+                    message: 'Error reading token: ' + error.message
+                };
+            }
+        }
+        
+        function displayStatus() {
+            const status = checkCurrentToken();
+            const statusDiv = document.getElementById('currentStatus');
+            
+            let html = '';
+            
+            if (status.status === 'none') {
+                html = `
+                    <div class="status">
+                        <strong>ℹ️ No Session Found</strong>
+                        <p style="margin-top: 8px; color: #6b7280;">No user session or tokens are currently stored.</p>
+                    </div>
+                `;
+            } else if (status.status === 'invalid') {
+                html = `
+                    <div class="status error">
+                        <strong>❌ Invalid Token Detected!</strong>
+                        <p style="margin-top: 8px; color: #991b1b;">
+                            Your current token is in an old or invalid format. This will cause authentication errors.
+                        </p>
+                        <div style="margin-top: 12px;">
+                            <span class="badge invalid">Invalid Format</span>
+                            <span class="badge">${status.details?.type || 'Unknown'}</span>
+                            <span class="badge">${status.details?.email || ''}</span>
+                        </div>
+                        <div class="token-info" style="margin-top: 12px;">
+Token: ${status.token}
+Format Issues:
+${!status.details?.hasPeriod ? '  ✗ Missing signature separator\n' : ''}
+${status.details?.partsCount !== 2 ? '  ✗ Invalid structure (should be 2 parts)\n' : ''}
+                        </div>
+                        <p style="margin-top: 12px; color: #991b1b; font-weight: 600;">
+                            ⚠️ Click the button below to clear and fix this issue
+                        </p>
+                    </div>
+                `;
+            } else if (status.status === 'valid') {
+                html = `
+                    <div class="status success">
+                        <strong>✅ Valid Token Found</strong>
+                        <p style="margin-top: 8px; color: #065f46;">Your current session token is valid.</p>
+                        <div style="margin-top: 12px;">
+                            <span class="badge valid">Valid Format</span>
+                            <span class="badge">${status.details?.type || 'Unknown'}</span>
+                            <span class="badge">${status.details?.email || ''}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="status error">
+                        <strong>⚠️ ${status.message}</strong>
+                    </div>
+                `;
+            }
+            
+            statusDiv.innerHTML = html;
+        }
+        
+        function clearAllData() {
+            const btn = document.getElementById('clearBtn');
+            btn.disabled = true;
+            btn.textContent = '🧹 Clearing...';
+            
+            try {
+                // Get counts before clearing
+                const lsCount = localStorage.length;
+                const ssCount = sessionStorage.length;
+                
+                // Clear localStorage
+                localStorage.clear();
+                console.log('✅ localStorage cleared');
+                
+                // Clear sessionStorage
+                sessionStorage.clear();
+                console.log('✅ sessionStorage cleared');
+                
+                // Clear cookies
+                document.cookie.split(";").forEach((c) => {
+                    document.cookie = c
+                        .replace(/^ +/, "")
+                        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+                console.log('✅ Cookies cleared');
+                
+                document.getElementById('result').innerHTML = `
+                    <div class="status success" style="margin-top: 20px;">
+                        <strong>✅ All Data Cleared Successfully!</strong>
+                        <div class="token-info" style="margin-top: 12px; color: #10b981;">
+Cleared:
+  • localStorage (${lsCount} items)
+  • sessionStorage (${ssCount} items)
+  • All cookies
+  • Department tokens
+  • Session data
+                        </div>
+                        <p style="margin-top: 12px; color: #065f46;">
+                            You can now close this page and return to BantayAlert.
+                        </p>
+                    </div>
+                `;
+                
+                // Update status display
+                setTimeout(() => {
+                    displayStatus();
+                }, 500);
+                
+                // Re-enable button
+                btn.textContent = '✅ Data Cleared - Return to App';
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <div class="status error" style="margin-top: 20px;">
+                        <strong>❌ Error Clearing Data</strong>
+                        <p style="margin-top: 8px; color: #991b1b;">${error.message}</p>
+                    </div>
+                `;
+                btn.disabled = false;
+                btn.textContent = '🚨 Clear All Tokens & Data';
+            }
+        }
+        
+        // Display current status on page load
+        displayStatus();
+        
+        // Auto-run if URL has ?auto=1
+        if (window.location.search.includes('auto=1')) {
+            clearAllData();
+        }
+    </script>
+</body>
+</html>

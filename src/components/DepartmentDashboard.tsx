@@ -1,14 +1,21 @@
 import { useState, useEffect } from "react";
-import { AlertTriangle, Users, Heart, Activity, MapPin, TrendingUp, Clock, Shield } from "lucide-react";
+import { AlertTriangle, Users, Heart, Activity, MapPin, TrendingUp, Clock, Shield, Loader2, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Skeleton } from "./ui/skeleton";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { DisasterMonitoring } from "./department/DisasterMonitoring";
 import { SOSAlertTracker } from "./department/SOSAlertTracker";
 import { DataAnalytics } from "./department/DataAnalytics";
 import { HealthcareIntegration } from "./department/HealthcareIntegration";
+import { EmergencyMap } from "./department/EmergencyMap";
+import { DatabaseSetupChecker } from "./DatabaseSetupChecker";
+import { MockDataBanner } from "./MockDataBanner";
 import type { DepartmentRole } from "./AuthModal";
+import { getSOSAlerts, getActiveDisasters, getHospitals, subscribeToSOSAlerts, subscribeToDisasters, subscribeToHospitals, unsubscribeChannel } from "../utils/realtimeDepartmentService";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface DepartmentDashboardProps {
   user: { 
@@ -21,13 +28,146 @@ interface DepartmentDashboardProps {
 }
 
 export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [stats, setStats] = useState({
-    activeAlerts: 12,
-    sosAlerts: 3,
-    evacuees: 245,
-    hospitalsOnline: 8
+  console.log("🔵 DepartmentDashboard rendering with user:", {
+    name: user.name,
+    email: user.email,
+    hasToken: !!user.accessToken,
+    tokenLength: user.accessToken?.length,
+    tokenPrefix: user.accessToken?.substring(0, 20),
+    userType: user.userType,
+    departmentRole: user.departmentRole
   });
+
+  const [activeTab, setActiveTab] = useState("overview");
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [stats, setStats] = useState({
+    activeAlerts: 0,
+    sosAlerts: 0,
+    evacuees: 0,
+    hospitalsOnline: 0
+  });
+  const [sosChannel, setSosChannel] = useState<RealtimeChannel | null>(null);
+  const [disasterChannel, setDisasterChannel] = useState<RealtimeChannel | null>(null);
+  const [hospitalChannel, setHospitalChannel] = useState<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    console.log("🔵 DepartmentDashboard useEffect triggered - Setting up real-time subscriptions");
+    loadStats();
+    setupRealtimeSubscriptions();
+    
+    return () => {
+      console.log("🔵 DepartmentDashboard cleaning up - Unsubscribing from real-time channels");
+      if (sosChannel) unsubscribeChannel(sosChannel);
+      if (disasterChannel) unsubscribeChannel(disasterChannel);
+      if (hospitalChannel) unsubscribeChannel(hospitalChannel);
+    };
+  }, [user?.accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const setupRealtimeSubscriptions = () => {
+    console.log("🔴 Setting up real-time subscriptions for dashboard");
+    
+    // Subscribe to SOS alerts
+    const sos = subscribeToSOSAlerts((payload) => {
+      console.log("🔴 Real-time SOS alert update received:", payload);
+      loadStats(); // Refresh stats when data changes
+    });
+    setSosChannel(sos);
+    
+    // Subscribe to disasters
+    const disaster = subscribeToDisasters((payload) => {
+      console.log("🔴 Real-time disaster update received:", payload);
+      loadStats();
+    });
+    setDisasterChannel(disaster);
+    
+    // Subscribe to hospitals
+    const hospital = subscribeToHospitals((payload) => {
+      console.log("🔴 Real-time hospital update received:", payload);
+      loadStats();
+    });
+    setHospitalChannel(hospital);
+  };
+
+  const loadStats = async () => {
+    try {
+      setIsLoading(true);
+      setHasError(false);
+
+      console.log("📊 Loading department stats from real-time database...");
+
+      // Load SOS alerts (no token needed - direct Supabase access)
+      console.log("Fetching SOS alerts...");
+      const sosData = await getSOSAlerts("all");
+      console.log("✓ SOS alerts loaded:", sosData?.alerts?.length || 0);
+      const activeSOSCount = (sosData?.alerts || []).filter((a: any) => 
+        a.status === "active" || a.status === "responding"
+      ).length;
+
+      // Load disasters
+      console.log("Fetching disasters...");
+      const disasterData = await getActiveDisasters();
+      console.log("✓ Disasters loaded:", disasterData?.disasters?.length || 0);
+      const totalEvacuees = (disasterData?.disasters || []).reduce((sum: number, d: any) => 
+        sum + (d.families_affected || 0), 0
+      );
+
+      // Load hospitals
+      console.log("Fetching hospitals...");
+      const hospitalData = await getHospitals();
+      console.log("✓ Hospitals loaded:", hospitalData?.hospitals?.length || 0);
+      const onlineHospitals = (hospitalData?.hospitals || []).filter((h: any) => 
+        h.status === "operational"
+      ).length;
+
+      setStats({
+        activeAlerts: (disasterData?.disasters || []).length,
+        sosAlerts: activeSOSCount,
+        evacuees: totalEvacuees,
+        hospitalsOnline: onlineHospitals
+      });
+      
+      console.log("✓ Dashboard stats updated successfully from real-time database");
+      setIsLoading(false);
+      setHasError(false);
+    } catch (error: any) {
+      console.error("❌ Failed to load dashboard stats:", error);
+      console.error("Error details:", error?.message || "Unknown error");
+      setIsLoading(false);
+      setHasError(true);
+      
+      // Check if it's an authentication error
+      const isAuthError = error?.message && (
+        error.message.includes("Authentication failed") ||
+        error.message.includes("Invalid token") ||
+        error.message.includes("sign in again")
+      );
+      
+      // Show a toast notification to the user
+      import("sonner@2.0.3").then(({ toast }) => {
+        toast.error("Failed to load dashboard data", {
+          description: isAuthError 
+            ? "Your session has expired. Please sign in again." 
+            : (error?.message || "Please check your connection and try again"),
+          duration: isAuthError ? 8000 : 5000,
+        });
+        
+        // If auth error, clear storage and suggest reload
+        if (isAuthError) {
+          setTimeout(() => {
+            localStorage.removeItem("USER");
+            toast.info("Please sign in again", {
+              description: "Click anywhere to reload and sign in",
+              action: {
+                label: "Reload",
+                onClick: () => window.location.reload(),
+              },
+            });
+          }, 3000);
+        }
+      });
+    }
+  };
 
   const getRoleName = () => {
     switch (user.departmentRole) {
@@ -44,10 +184,10 @@ export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
       { 
         id: "alerts", 
         icon: AlertTriangle, 
-        label: "Active Alerts", 
+        label: "Active Disasters", 
         value: stats.activeAlerts, 
         color: "bg-orange-500",
-        change: "+2 from last hour"
+        change: "Click to view details"
       },
       { 
         id: "sos", 
@@ -55,7 +195,7 @@ export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
         label: "SOS Distress Signals", 
         value: stats.sosAlerts, 
         color: "bg-red-500",
-        change: "Urgent attention needed"
+        change: stats.sosAlerts > 0 ? "Urgent attention needed" : "No active alerts"
       },
       { 
         id: "evacuees", 
@@ -63,7 +203,7 @@ export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
         label: "Total Evacuees", 
         value: stats.evacuees, 
         color: "bg-blue-500",
-        change: "+15 in last 30 min"
+        change: "Across all evacuation centers"
       },
       { 
         id: "hospitals", 
@@ -71,45 +211,143 @@ export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
         label: "Hospitals Online", 
         value: stats.hospitalsOnline, 
         color: "bg-green-500",
-        change: "All reporting"
+        change: "Click for hospital details"
       },
     ];
   };
 
   return (
     <div className="p-4 space-y-6">
+      {/* Mock Data Banner */}
+      <MockDataBanner />
+      
+      {/* Database Setup Check */}
+      <DatabaseSetupChecker />
+      
+      {/* Debug Info - Shows in all environments for now to help troubleshooting */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-xs font-mono">
+                <strong>Session:</strong> {user.name} | {user.departmentRole?.toUpperCase()} | Token Format: {user.accessToken?.includes('.') ? '✓ Valid (New)' : '✗ Invalid (Old)'}
+              </p>
+              <p className="text-xs font-mono mt-1 text-gray-600">
+                Token: {user.accessToken?.substring(0, 30)}...{user.accessToken ? user.accessToken.substring(user.accessToken.length - 10) : ''}
+              </p>
+            </div>
+            <Badge variant={user.accessToken?.includes('.') ? 'default' : 'destructive'}>
+              {user.accessToken?.includes('.') ? 'Ready' : 'Token Issue'}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+      
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg p-6">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold mb-2">{getRoleName()}</h1>
             <p className="text-blue-100">Real-time disaster response coordination for NCR</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Activity className="h-5 w-5 animate-pulse" />
-            <span className="text-sm">System Active</span>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadStats()}
+              disabled={isLoading}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <div className="flex items-center space-x-2">
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="text-sm">Loading...</span>
+                </>
+              ) : (
+                <>
+                  <Activity className="h-5 w-5 animate-pulse" />
+                  <span className="text-sm">System Active</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Error Banner */}
+      {hasError && !isLoading && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-medium text-red-900">Unable to Load Dashboard Data</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  There was a problem connecting to the server. Please check the console for details or try refreshing.
+                </p>
+                <Button
+                  onClick={() => loadStats()}
+                  size="sm"
+                  variant="outline"
+                  className="mt-2 border-red-300 text-red-700 hover:bg-red-100"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Quick Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {getQuickStats().map((stat) => (
-          <Card key={stat.id}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold mb-1">{stat.value}</p>
-                  <p className="text-xs text-gray-500">{stat.change}</p>
+        {isLoading ? (
+          // Loading skeleton
+          Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-12 w-12 rounded-lg" />
                 </div>
-                <div className={`p-3 rounded-lg ${stat.color}`}>
-                  <stat.icon className="h-6 w-6 text-white" />
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          getQuickStats().map((stat) => (
+            <Card 
+              key={stat.id} 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => {
+                if (stat.id === "alerts") setActiveTab("monitoring");
+                if (stat.id === "sos") setActiveTab("sos");
+                if (stat.id === "hospitals") setActiveTab("healthcare");
+              }}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+                    <p className="text-3xl font-bold mb-1">{stat.value}</p>
+                    <p className="text-xs text-gray-500">{stat.change}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${stat.color}`}>
+                    <stat.icon className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Critical Alerts Banner */}
@@ -142,27 +380,96 @@ export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={`grid w-full ${(user.departmentRole === "lgu" || user.departmentRole === "emergency_responder") ? 'grid-cols-5' : 'grid-cols-4'}`}>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          {(user.departmentRole === "lgu" || user.departmentRole === "emergency_responder") && (
+            <TabsTrigger value="map">Emergency Map</TabsTrigger>
+          )}
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
           <TabsTrigger value="sos">SOS Alerts</TabsTrigger>
           <TabsTrigger value="healthcare">Healthcare</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <DataAnalytics user={user} />
+          {activeTab === "overview" && (
+            <ErrorBoundary fallback={
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-6 text-center">
+                  <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-red-600" />
+                  <p className="text-red-900 font-medium">Failed to load Analytics</p>
+                  <p className="text-red-700 text-sm mt-1">Please refresh the page or contact support</p>
+                </CardContent>
+              </Card>
+            }>
+              <DataAnalytics user={user} />
+            </ErrorBoundary>
+          )}
         </TabsContent>
 
+        {(user.departmentRole === "lgu" || user.departmentRole === "emergency_responder") && (
+          <TabsContent value="map" className="mt-6">
+            {activeTab === "map" && (
+              <ErrorBoundary fallback={
+                <Card className="border-red-200 bg-red-50">
+                  <CardContent className="p-6 text-center">
+                    <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-red-600" />
+                    <p className="text-red-900 font-medium">Failed to load Emergency Map</p>
+                    <p className="text-red-700 text-sm mt-1">Please refresh the page or contact support</p>
+                  </CardContent>
+                </Card>
+              }>
+                <EmergencyMap user={user} />
+              </ErrorBoundary>
+            )}
+          </TabsContent>
+        )}
+
         <TabsContent value="monitoring" className="mt-6">
-          <DisasterMonitoring user={user} />
+          {activeTab === "monitoring" && (
+            <ErrorBoundary fallback={
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-6 text-center">
+                  <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-red-600" />
+                  <p className="text-red-900 font-medium">Failed to load Disaster Monitoring</p>
+                  <p className="text-red-700 text-sm mt-1">Please refresh the page or contact support</p>
+                </CardContent>
+              </Card>
+            }>
+              <DisasterMonitoring user={user} />
+            </ErrorBoundary>
+          )}
         </TabsContent>
 
         <TabsContent value="sos" className="mt-6">
-          <SOSAlertTracker user={user} />
+          {activeTab === "sos" && (
+            <ErrorBoundary fallback={
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-6 text-center">
+                  <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-red-600" />
+                  <p className="text-red-900 font-medium">Failed to load SOS Alerts</p>
+                  <p className="text-red-700 text-sm mt-1">Please refresh the page or contact support</p>
+                </CardContent>
+              </Card>
+            }>
+              <SOSAlertTracker user={user} />
+            </ErrorBoundary>
+          )}
         </TabsContent>
 
         <TabsContent value="healthcare" className="mt-6">
-          <HealthcareIntegration user={user} />
+          {activeTab === "healthcare" && (
+            <ErrorBoundary fallback={
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-6 text-center">
+                  <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-red-600" />
+                  <p className="text-red-900 font-medium">Failed to load Healthcare Integration</p>
+                  <p className="text-red-700 text-sm mt-1">Please refresh the page or contact support</p>
+                </CardContent>
+              </Card>
+            }>
+              <HealthcareIntegration user={user} />
+            </ErrorBoundary>
+          )}
         </TabsContent>
       </Tabs>
     </div>

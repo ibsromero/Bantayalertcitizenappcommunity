@@ -17,7 +17,13 @@ const supabase = createClient(
 
 // Health check
 app.get("/make-server-dd0f68d8/health", (c) => {
-  return c.json({ status: "ok", service: "BantayAlert API" });
+  return c.json({ 
+    status: "ok", 
+    service: "BantayAlert API",
+    version: "2.0.0-token-fix",
+    timestamp: new Date().toISOString(),
+    tokenFormat: "dept_{base64payload}.{base64signature}"
+  });
 });
 
 // Initialize sample data for demonstration
@@ -86,6 +92,42 @@ app.post("/make-server-dd0f68d8/init-sample-data", async (c) => {
         status: "operational",
         contact: "+63 2 8558 0888",
         updated_at: new Date().toISOString()
+      },
+      {
+        id: "hosp_006",
+        name: "St. Luke's Medical Center - BGC",
+        location: "Taguig City",
+        totalBeds: 650,
+        availableBeds: 175,
+        emergencyCapacity: 80,
+        icuCapacity: 35,
+        status: "operational",
+        contact: "+63 2 7789 7700",
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: "hosp_007",
+        name: "Taguig-Pateros District Hospital",
+        location: "Taguig City",
+        totalBeds: 200,
+        availableBeds: 58,
+        emergencyCapacity: 40,
+        icuCapacity: 12,
+        status: "operational",
+        contact: "+63 2 8789 2345",
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: "hosp_008",
+        name: "Las Piñas General Hospital",
+        location: "Las Piñas City",
+        totalBeds: 350,
+        availableBeds: 82,
+        emergencyCapacity: 55,
+        icuCapacity: 18,
+        status: "operational",
+        contact: "+63 2 8874 0101",
+        updated_at: new Date().toISOString()
       }
     ];
 
@@ -115,6 +157,14 @@ app.post("/make-server-dd0f68d8/init-sample-data", async (c) => {
         affectedAreas: ["Brgy. Tumana", "Brgy. Santo Niño", "Brgy. San Roque"],
         affectedPopulation: 1250,
         evacuees: 450,
+        evacuationCenters: [
+          {
+            name: "Marikina Sports Center",
+            capacity: 500,
+            current: 450,
+            address: "Sumulong Highway, Marikina City"
+          }
+        ],
         status: "active",
         description: "Heavy rainfall causing river overflow. Water level at critical stage.",
         created_at: new Date(Date.now() - 7200000).toISOString(),
@@ -128,7 +178,21 @@ app.post("/make-server-dd0f68d8/init-sample-data", async (c) => {
         location: "Metro Manila",
         affectedAreas: ["Quezon City", "Manila", "Pasay"],
         affectedPopulation: 2500,
-        evacuees: 680,
+        evacuees: 820,
+        evacuationCenters: [
+          {
+            name: "QC Memorial Circle Gymnasium",
+            capacity: 800,
+            current: 520,
+            address: "Elliptical Road, Quezon City"
+          },
+          {
+            name: "Rizal Park Gymnasium",
+            capacity: 400,
+            current: 300,
+            address: "Roxas Boulevard, Manila"
+          }
+        ],
         status: "active",
         description: "Tropical depression affecting NCR with strong winds and heavy rain.",
         created_at: new Date(Date.now() - 14400000).toISOString(),
@@ -151,18 +215,91 @@ app.post("/make-server-dd0f68d8/init-sample-data", async (c) => {
     
     console.log("✓ Disasters data saved");
     
-    // Initialize empty SOS alerts array
+    // Initialize sample SOS alerts
+    const sampleSOSAlerts = [
+      {
+        id: "sos_001",
+        userEmail: "maria.santos@email.com",
+        userName: "Maria Santos",
+        contactNumber: "+63 917 123 4567",
+        location: { 
+          lat: 14.6507, 
+          lng: 121.1029, 
+          address: "Brgy. Tumana, Marikina City - Near Marikina River"
+        },
+        details: "House is flooding rapidly, water level rising. Need immediate evacuation assistance.",
+        priority: "critical",
+        status: "active",
+        created_at: new Date(Date.now() - 1800000).toISOString(),
+        updated_at: new Date().toISOString(),
+        responded_by: null,
+        resolution: null
+      },
+      {
+        id: "sos_002",
+        userEmail: "juan.cruz@email.com",
+        userName: "Juan Cruz",
+        contactNumber: "+63 918 234 5678",
+        location: { 
+          lat: 14.6760, 
+          lng: 121.0437, 
+          address: "123 Commonwealth Ave, Quezon City"
+        },
+        details: "Elderly person trapped on second floor due to flooding. Medical assistance needed.",
+        priority: "high",
+        status: "responding",
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+        updated_at: new Date().toISOString(),
+        responded_by: "Emergency Responder",
+        resolution: null,
+        responseProgress: "enroute"
+      },
+      {
+        id: "sos_003",
+        userEmail: "ana.reyes@email.com",
+        userName: "Ana Reyes",
+        contactNumber: "+63 919 345 6789",
+        location: { 
+          lat: 14.5995, 
+          lng: 120.9842, 
+          address: "Barangay Pio del Pilar, Makati City"
+        },
+        details: "Power outage and strong winds. Tree fell near house, blocking exit.",
+        priority: "medium",
+        status: "active",
+        created_at: new Date(Date.now() - 7200000).toISOString(),
+        updated_at: new Date().toISOString(),
+        responded_by: null,
+        resolution: null
+      }
+    ];
+
     const { error: sosError } = await supabase
       .from("kv_store_dd0f68d8")
       .upsert({
         key: "sos_alerts_all",
-        value: [],
+        value: sampleSOSAlerts,
         updated_at: new Date().toISOString()
       });
 
     if (sosError) {
       console.error("Error initializing SOS alerts:", sosError);
       throw sosError;
+    }
+    
+    // Also save to active alerts
+    const activeSOSAlerts = sampleSOSAlerts.filter(alert => alert.status === "active" || alert.status === "responding");
+    const { error: sosActiveError } = await supabase
+      .from("kv_store_dd0f68d8")
+      .upsert({
+        key: "sos_alerts_active",
+        value: activeSOSAlerts,
+        updated_at: new Date().toISOString()
+      });
+
+    if (sosActiveError) {
+      console.error("Error initializing active SOS alerts:", sosActiveError);
+      throw sosActiveError;
     }
     
     console.log("✓ SOS alerts initialized");
@@ -173,7 +310,8 @@ app.post("/make-server-dd0f68d8/init-sample-data", async (c) => {
       message: "Sample data initialized",
       data: {
         hospitals: sampleHospitals.length,
-        disasters: sampleDisasters.length
+        disasters: sampleDisasters.length,
+        sosAlerts: sampleSOSAlerts.length
       }
     });
   } catch (error) {
@@ -407,9 +545,72 @@ const DEPARTMENT_CREDENTIALS = {
   }
 };
 
+// Simple token encoding/decoding (for prototype - in production use JWT)
+function createDepartmentToken(email: string, role: string, name: string, department: string): string {
+  const payload = {
+    email,
+    role,
+    name,
+    department,
+    timestamp: Date.now()
+  };
+  // Base64 encode the payload with a simple signature
+  const payloadStr = JSON.stringify(payload);
+  const signature = btoa(`${payloadStr}:BANTAY_SECRET_KEY_2025`);
+  return `dept_${btoa(payloadStr)}.${signature}`;
+}
+
+function verifyDepartmentToken(token: string): any {
+  try {
+    if (!token || !token.startsWith("dept_")) {
+      console.log("Token verification failed: Invalid format or missing dept_ prefix");
+      return null;
+    }
+    
+    // Extract payload and signature
+    const parts = token.substring(5).split('.');
+    if (parts.length !== 2) {
+      console.log("Token verification failed: Invalid token structure. Token might be from old format.");
+      console.log("Please sign out and sign back in to get a new token.");
+      return null;
+    }
+    
+    const [payloadB64, signature] = parts;
+    
+    try {
+      const payloadStr = atob(payloadB64);
+      const expectedSignature = btoa(`${payloadStr}:BANTAY_SECRET_KEY_2025`);
+      
+      // Verify signature
+      if (signature !== expectedSignature) {
+        console.log("Invalid token signature");
+        return null;
+      }
+      
+      const payload = JSON.parse(payloadStr);
+      
+      // Verify the email exists in our credentials
+      if (!DEPARTMENT_CREDENTIALS[payload.email as keyof typeof DEPARTMENT_CREDENTIALS]) {
+        console.log("Invalid department email in token");
+        return null;
+      }
+      
+      console.log("✓ Token verified for:", payload.name, payload.role);
+      return payload;
+    } catch (decodeError: any) {
+      console.log("Token decode error:", decodeError.message);
+      return null;
+    }
+  } catch (error: any) {
+    console.log("Token verification error:", error.message);
+    return null;
+  }
+}
+
 // Department sign-in endpoint
 app.post("/make-server-dd0f68d8/department/signin", async (c) => {
   try {
+    console.log("🔐 Department sign-in request received");
     const { email, password } = await c.req.json();
 
     if (!email || !password) {
@@ -419,14 +620,22 @@ app.post("/make-server-dd0f68d8/department/signin", async (c) => {
     const dept = DEPARTMENT_CREDENTIALS[email as keyof typeof DEPARTMENT_CREDENTIALS];
     
     if (!dept || dept.password !== password) {
+      console.log("❌ Invalid credentials for:", email);
       return c.json({ error: "Invalid department credentials" }, 401);
     }
 
     // Create a session token for the department
-    const sessionToken = `dept_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const sessionToken = createDepartmentToken(email, dept.role, dept.name, dept.department);
+    
+    console.log("✅ Creating department session for:", dept.name);
+    console.log("Token format check:");
+    console.log("  - Starts with dept_:", sessionToken.startsWith("dept_"));
+    console.log("  - Has period:", sessionToken.includes("."));
+    console.log("  - Parts count:", sessionToken.substring(5).split(".").length);
+    console.log("  - First 40 chars:", sessionToken.substring(0, 40) + "...");
     
     // Store session
-    await supabase
+    const { error: sessionError } = await supabase
       .from("kv_store_dd0f68d8")
       .upsert({
         key: `dept_session_${sessionToken}`,
@@ -439,6 +648,27 @@ app.post("/make-server-dd0f68d8/department/signin", async (c) => {
         },
         updated_at: new Date().toISOString()
       });
+
+    if (sessionError) {
+      console.error("Failed to store department session:", sessionError);
+      return c.json({ error: "Failed to create session" }, 500);
+    }
+    
+    console.log("✓ Department session created successfully");
+    
+    // Verify session was stored correctly
+    const { data: verifyData, error: verifyError } = await supabase
+      .from("kv_store_dd0f68d8")
+      .select("value")
+      .eq("key", `dept_session_${sessionToken}`)
+      .single();
+    
+    if (verifyError || !verifyData) {
+      console.error("❌ Session verification failed immediately after creation:", verifyError);
+      return c.json({ error: "Session creation verification failed" }, 500);
+    }
+    
+    console.log("✓ Session verified immediately after creation");
 
     return c.json({
       success: true,
@@ -459,14 +689,40 @@ app.post("/make-server-dd0f68d8/department/signin", async (c) => {
 // Verify department session
 const verifyDepartmentSession = async (token: string) => {
   try {
-    const { data } = await supabase
+    console.log("Verifying department session for token:", token.substring(0, 15) + '...');
+    
+    // First check if it's a valid token format
+    if (!token || !token.startsWith("dept_")) {
+      console.log("Invalid token format");
+      return null;
+    }
+    
+    const { data, error } = await supabase
       .from("kv_store_dd0f68d8")
       .select("value")
       .eq("key", `dept_session_${token}`)
       .single();
     
-    return data?.value || null;
-  } catch {
+    if (error) {
+      console.log("Session verification error:", error.message, error.code);
+      
+      // If session not found, return null
+      if (error.code === "PGRST116") {
+        console.log("Session not found in database");
+        return null;
+      }
+      return null;
+    }
+    
+    if (data?.value) {
+      console.log("✓ Session found for:", data.value.name, data.value.role);
+      return data.value;
+    }
+    
+    console.log("No session data in response");
+    return null;
+  } catch (error: any) {
+    console.log("Session verification exception:", error.message);
     return null;
   }
 };
@@ -544,20 +800,20 @@ app.post("/make-server-dd0f68d8/sos/create", async (c) => {
 // Get all SOS alerts (Department only)
 app.get("/make-server-dd0f68d8/sos/alerts", async (c) => {
   try {
-    const token = c.req.header("Authorization")?.split(" ")[1];
+    const token = c.req.header("X-Department-Token");
     
     console.log("SOS alerts request - token:", token?.substring(0, 15) + '...');
     
-    // Verify department session
+    // Verify department token
     if (!token || !token.startsWith("dept_")) {
       console.log("SOS alerts request rejected - invalid token format");
       return c.json({ error: "Unauthorized - Department access only" }, 401);
     }
 
-    const session = await verifyDepartmentSession(token);
+    const session = verifyDepartmentToken(token);
     if (!session) {
-      console.log("SOS alerts request rejected - invalid session");
-      return c.json({ error: "Invalid session" }, 401);
+      console.log("SOS alerts request rejected - invalid token");
+      return c.json({ error: "Invalid token" }, 401);
     }
     
     console.log("SOS alerts request authorized for:", session.name);
@@ -588,16 +844,16 @@ app.get("/make-server-dd0f68d8/sos/alerts", async (c) => {
 // Update SOS alert status
 app.put("/make-server-dd0f68d8/sos/alert/:id", async (c) => {
   try {
-    const token = c.req.header("Authorization")?.split(" ")[1];
+    const token = c.req.header("X-Department-Token");
     
-    // Verify department session
+    // Verify department token
     if (!token || !token.startsWith("dept_")) {
       return c.json({ error: "Unauthorized - Department access only" }, 401);
     }
 
-    const session = await verifyDepartmentSession(token);
+    const session = verifyDepartmentToken(token);
     if (!session) {
-      return c.json({ error: "Invalid session" }, 401);
+      return c.json({ error: "Invalid token" }, 401);
     }
 
     const alertId = c.req.param("id");
@@ -675,7 +931,7 @@ app.put("/make-server-dd0f68d8/sos/alert/:id", async (c) => {
 // Get active disasters
 app.get("/make-server-dd0f68d8/disasters/active", async (c) => {
   try {
-    const token = c.req.header("Authorization")?.split(" ")[1];
+    const token = c.req.header("X-Department-Token");
     
     if (!token || !token.startsWith("dept_")) {
       return c.json({ error: "Unauthorized" }, 401);
@@ -697,15 +953,15 @@ app.get("/make-server-dd0f68d8/disasters/active", async (c) => {
 // Create/update disaster event
 app.post("/make-server-dd0f68d8/disasters/event", async (c) => {
   try {
-    const token = c.req.header("Authorization")?.split(" ")[1];
+    const token = c.req.header("X-Department-Token");
     
     if (!token || !token.startsWith("dept_")) {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
-    const session = await verifyDepartmentSession(token);
+    const session = verifyDepartmentToken(token);
     if (!session) {
-      return c.json({ error: "Invalid session" }, 401);
+      return c.json({ error: "Invalid token" }, 401);
     }
 
     const eventData = await c.req.json();
@@ -772,15 +1028,15 @@ app.get("/make-server-dd0f68d8/healthcare/hospitals", async (c) => {
 // Update hospital capacity (Healthcare department only)
 app.put("/make-server-dd0f68d8/healthcare/hospital/:id", async (c) => {
   try {
-    const token = c.req.header("Authorization")?.split(" ")[1];
+    const token = c.req.header("X-Department-Token");
     
     if (!token || !token.startsWith("dept_")) {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
-    const session = await verifyDepartmentSession(token);
+    const session = verifyDepartmentToken(token);
     if (!session) {
-      return c.json({ error: "Invalid session" }, 401);
+      return c.json({ error: "Invalid token" }, 401);
     }
 
     const hospitalId = c.req.param("id");
@@ -825,7 +1081,7 @@ app.put("/make-server-dd0f68d8/healthcare/hospital/:id", async (c) => {
 // Get analytics data
 app.get("/make-server-dd0f68d8/analytics/summary", async (c) => {
   try {
-    const token = c.req.header("Authorization")?.split(" ")[1];
+    const token = c.req.header("X-Department-Token");
     
     console.log("Analytics request - token:", token?.substring(0, 15) + '...');
     
@@ -833,6 +1089,15 @@ app.get("/make-server-dd0f68d8/analytics/summary", async (c) => {
       console.log("Analytics request rejected - invalid token format");
       return c.json({ error: "Unauthorized - Department access required" }, 401);
     }
+
+    // Verify department token
+    const session = verifyDepartmentToken(token);
+    if (!session) {
+      console.log("Analytics request rejected - invalid token");
+      return c.json({ error: "Invalid or expired token" }, 401);
+    }
+    
+    console.log("Analytics request authorized for:", session.name);
 
     // Fetch various data for analytics
     console.log("Fetching analytics data from database...");

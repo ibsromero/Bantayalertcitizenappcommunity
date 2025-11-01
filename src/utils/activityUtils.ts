@@ -131,6 +131,7 @@ function getActivityColor(type: string): string {
     profile_updated: "purple",
     evacuation_viewed: "blue",
     resource_downloaded: "green",
+    sos_sent: "red",
   };
   
   return colorMap[type] || "gray";

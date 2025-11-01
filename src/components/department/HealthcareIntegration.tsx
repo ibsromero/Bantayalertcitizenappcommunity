@@ -29,38 +29,50 @@ interface HealthcareIntegrationProps {
 }
 
 export function HealthcareIntegration({ user }: HealthcareIntegrationProps) {
+  console.log("🟢 HealthcareIntegration component mounting. User:", {
+    name: user?.name,
+    hasToken: !!user?.accessToken
+  });
+
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
-  const [updateForm, setUpdateForm] = useState({
+  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
+  const [updateFormData, setUpdateFormData] = useState({
     availableBeds: 0,
     emergencyCapacity: 0,
-    icuCapacity: 0
+    icuCapacity: 0,
+    status: "operational"
   });
 
   useEffect(() => {
+    console.log("🟢 HealthcareIntegration useEffect triggered");
     loadHospitals();
-    // Auto-refresh every 60 seconds
+    // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       loadHospitals(true);
-    }, 60000);
-    return () => clearInterval(interval);
-  }, []);
+    }, 30000);
+    return () => {
+      console.log("🟢 HealthcareIntegration cleanup");
+      clearInterval(interval);
+    };
+  }, [user?.accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadHospitals = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    setIsRefreshing(true);
-    
     try {
+      if (!silent) setIsLoading(true);
+      setIsRefreshing(true);
+
+      console.log("🏥 HealthcareIntegration: Loading hospitals...");
       const data = await getHospitals();
-      setHospitals(data.hospitals || []);
-    } catch (error) {
-      console.error("Failed to load hospitals:", error);
+      console.log("✅ HealthcareIntegration: Loaded", data?.hospitals?.length || 0, "hospitals");
+      setHospitals(data?.hospitals || []);
+    } catch (error: any) {
+      console.error("❌ HealthcareIntegration: Failed to load hospitals:", error.message);
       if (!silent) {
-        toast.error("Failed to load hospitals", {
-          description: "Could not connect to server",
+        toast.error("Failed to load hospital data", {
+          description: error.message || "Could not connect to server",
         });
       }
     } finally {
@@ -71,10 +83,11 @@ export function HealthcareIntegration({ user }: HealthcareIntegrationProps) {
 
   const handleOpenUpdateDialog = (hospital: Hospital) => {
     setSelectedHospital(hospital);
-    setUpdateForm({
+    setUpdateFormData({
       availableBeds: hospital.availableBeds,
       emergencyCapacity: hospital.emergencyCapacity,
-      icuCapacity: hospital.icuCapacity
+      icuCapacity: hospital.icuCapacity,
+      status: hospital.status
     });
     setUpdateDialogOpen(true);
   };
@@ -83,13 +96,13 @@ export function HealthcareIntegration({ user }: HealthcareIntegrationProps) {
     if (!selectedHospital || !user?.accessToken) return;
 
     try {
-      await updateHospitalCapacity(user.accessToken, selectedHospital.id, updateForm);
+      await updateHospitalCapacity(user.accessToken, selectedHospital.id, updateFormData);
       
       // Update local state
       setHospitals(prev => 
         prev.map(h => 
           h.id === selectedHospital.id 
-            ? { ...h, ...updateForm, updated_at: new Date().toISOString() }
+            ? { ...h, ...updateFormData, updated_at: new Date().toISOString() }
             : h
         )
       );
@@ -342,8 +355,8 @@ export function HealthcareIntegration({ user }: HealthcareIntegrationProps) {
                 id="availableBeds"
                 type="number"
                 min="0"
-                value={updateForm.availableBeds}
-                onChange={(e) => setUpdateForm(prev => ({
+                value={updateFormData.availableBeds}
+                onChange={(e) => setUpdateFormData(prev => ({
                   ...prev,
                   availableBeds: parseInt(e.target.value) || 0
                 }))}
@@ -355,8 +368,8 @@ export function HealthcareIntegration({ user }: HealthcareIntegrationProps) {
                 id="emergencyCapacity"
                 type="number"
                 min="0"
-                value={updateForm.emergencyCapacity}
-                onChange={(e) => setUpdateForm(prev => ({
+                value={updateFormData.emergencyCapacity}
+                onChange={(e) => setUpdateFormData(prev => ({
                   ...prev,
                   emergencyCapacity: parseInt(e.target.value) || 0
                 }))}
@@ -368,8 +381,8 @@ export function HealthcareIntegration({ user }: HealthcareIntegrationProps) {
                 id="icuCapacity"
                 type="number"
                 min="0"
-                value={updateForm.icuCapacity}
-                onChange={(e) => setUpdateForm(prev => ({
+                value={updateFormData.icuCapacity}
+                onChange={(e) => setUpdateFormData(prev => ({
                   ...prev,
                   icuCapacity: parseInt(e.target.value) || 0
                 }))}

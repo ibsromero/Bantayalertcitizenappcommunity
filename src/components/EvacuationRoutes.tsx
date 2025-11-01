@@ -42,7 +42,7 @@ export function EvacuationRoutes({ user }: EvacuationRoutesProps) {
         detectUserLocation();
       }
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const detectUserLocation = async () => {
     if (!isGeolocationAvailable()) {

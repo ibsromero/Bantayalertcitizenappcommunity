@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Menu, Settings, User, LogOut, Phone, Package, MapPin, BookOpen, ListChecks, CloudRain, X } from "lucide-react";
+import { Bell, Menu, Settings, User, LogOut, Phone, Package, MapPin, BookOpen, ListChecks, CloudRain, X, AlertTriangle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -9,6 +9,7 @@ import { NotificationsDialog } from "./NotificationsDialog";
 import { SettingsHub } from "./SettingsHub";
 import { ProfileDialog } from "./ProfileDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
+import { SOSButton } from "./SOSButton";
 
 interface HeaderProps {
   user: { name: string; email: string; accessToken?: string; userType?: UserType; departmentRole?: DepartmentRole } | null;
@@ -65,7 +66,7 @@ export function Header({ user, onLogin, onLogout, onNavigate }: HeaderProps) {
   return (
     <>
       <header className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center space-x-2 sm:space-x-3">
             <Button 
               variant="ghost" 
@@ -77,7 +78,15 @@ export function Header({ user, onLogin, onLogout, onNavigate }: HeaderProps) {
             </Button>
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900">BantayAlert</h1>
           </div>
+          
           <div className="flex items-center space-x-1 sm:space-x-2">
+            {/* Quick SOS Button - always visible for citizen view */}
+            {user?.userType !== "department" && (
+              <div className="hidden sm:block">
+                <SOSButton user={user} />
+              </div>
+            )}
+            
             {user && (
               <Button 
                 variant="ghost" 
@@ -170,6 +179,16 @@ export function Header({ user, onLogin, onLogout, onNavigate }: HeaderProps) {
               Emergency Response System
             </SheetDescription>
           </SheetHeader>
+          
+          {/* SOS Button in Sidebar - only for citizen view */}
+          {user?.userType !== "department" && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex flex-col items-center space-y-2">
+                <p className="text-xs text-red-900 font-medium text-center">Emergency Alert</p>
+                <SOSButton user={user} />
+              </div>
+            </div>
+          )}
           
           <div className="mt-6 space-y-2">
             <Button

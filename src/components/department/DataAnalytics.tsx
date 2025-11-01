@@ -32,43 +32,91 @@ interface AnalyticsData {
 }
 
 export function DataAnalytics({ user }: DataAnalyticsProps) {
+  console.log("🟢 DataAnalytics component mounting. User:", {
+    name: user?.name,
+    email: user?.email,
+    hasToken: !!user?.accessToken,
+    tokenPrefix: user?.accessToken?.substring(0, 15)
+  });
+
   const [timeRange, setTimeRange] = useState("24h");
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
+    console.log("🟢 DataAnalytics useEffect triggered");
     loadAnalytics();
     // Auto-refresh every 60 seconds
     const interval = setInterval(() => {
       loadAnalytics(true);
     }, 60000);
-    return () => clearInterval(interval);
-  }, [user]);
+    return () => {
+      console.log("🟢 DataAnalytics cleanup");
+      clearInterval(interval);
+    };
+  }, [user?.accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAnalytics = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    setIsRefreshing(true);
-    
     try {
+      if (!silent) setIsLoading(true);
+      setIsRefreshing(true);
+      
       const token = user?.accessToken;
       if (!token) {
-        console.error("DataAnalytics: No access token available. User:", user);
+        console.error("❌ DataAnalytics: No access token available. User:", user);
         setIsLoading(false);
         setIsRefreshing(false);
+        toast.error("Authentication Required", {
+          description: "Please sign in again to view analytics"
+        });
         return;
       }
 
-      console.log("DataAnalytics: Loading analytics with token:", token.substring(0, 10) + '...');
+      console.log("📊 DataAnalytics: Loading analytics with token:", token.substring(0, 10) + '...');
       const data = await getAnalyticsSummary(token);
-      console.log("DataAnalytics: Analytics loaded successfully:", data);
-      setAnalytics(data);
+      console.log("✅ DataAnalytics: Analytics loaded successfully:", data);
+      
+      // Validate data structure before setting
+      if (data && data.alerts && data.disasters && data.healthcare) {
+        setAnalytics(data);
+      } else {
+        console.error("❌ Invalid analytics data structure:", data);
+        throw new Error("Invalid data format received from server");
+      }
     } catch (error: any) {
-      console.error("DataAnalytics: Failed to load analytics:", error.message || error);
+      console.error("❌ DataAnalytics: Failed to load analytics:", error.message || error);
+      
+      // Check if it's an authentication error
+      const isAuthError = error?.message && (
+        error.message.includes("Authentication failed") ||
+        error.message.includes("Invalid token") ||
+        error.message.includes("sign in again")
+      );
+      
       if (!silent) {
         toast.error("Failed to load analytics", {
-          description: error.message || "Could not connect to server",
+          description: isAuthError 
+            ? "Your session has expired. Please sign in again." 
+            : (error.message || "Could not connect to server"),
+          duration: isAuthError ? 8000 : 5000,
         });
+        
+        // If auth error, suggest reload
+        if (isAuthError) {
+          setTimeout(() => {
+            toast.info("Session Expired", {
+              description: "Please reload the page and sign in again",
+              action: {
+                label: "Reload",
+                onClick: () => {
+                  localStorage.removeItem("USER");
+                  window.location.reload();
+                },
+              },
+            });
+          }, 3000);
+        }
       }
     } finally {
       setIsLoading(false);

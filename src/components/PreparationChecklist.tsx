@@ -77,9 +77,11 @@ export function PreparationChecklist({ user }: PreparationChecklistProps) {
           setChecklists(data);
           saveToStorage("CHECKLISTS", data);
         }
+      }).catch(error => {
+        console.error('Error loading checklists:', error);
       });
     }
-  }, [user]);
+  }, [user?.accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Save checklists whenever they change
@@ -89,7 +91,7 @@ export function PreparationChecklist({ user }: PreparationChecklistProps) {
     if (user?.accessToken) {
       saveUserData("checklists", checklists, user.accessToken);
     }
-  }, [checklists, user]);
+  }, [checklists, user?.accessToken]);
 
   const handleToggleItem = (type: string, itemId: number) => {
     setChecklists(prev => {

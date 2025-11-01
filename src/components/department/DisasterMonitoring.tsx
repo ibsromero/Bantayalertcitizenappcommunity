@@ -10,6 +10,11 @@ interface DisasterMonitoringProps {
 }
 
 export function DisasterMonitoring({ user }: DisasterMonitoringProps) {
+  console.log("🟢 DisasterMonitoring component mounting. User:", {
+    name: user?.name,
+    hasToken: !!user?.accessToken
+  });
+
   const [weatherData, setWeatherData] = useState({
     temperature: 28,
     humidity: 85,

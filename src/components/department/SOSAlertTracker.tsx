@@ -27,40 +27,53 @@ interface SOSAlertTrackerProps {
 }
 
 export function SOSAlertTracker({ user }: SOSAlertTrackerProps) {
+  console.log("🟢 SOSAlertTracker component mounting. User:", {
+    name: user?.name,
+    hasToken: !!user?.accessToken
+  });
+
+  const [statusFilter, setStatusFilter] = useState<"all" | "active">("all");
   const [alerts, setAlerts] = useState<SOSAlert[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
+    console.log("🟢 SOSAlertTracker useEffect triggered");
     loadAlerts();
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 15 seconds
     const interval = setInterval(() => {
       loadAlerts(true);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
+    }, 15000);
+    return () => {
+      console.log("🟢 SOSAlertTracker cleanup");
+      clearInterval(interval);
+    };
+  }, [statusFilter, user?.accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAlerts = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    setIsRefreshing(true);
-    
     try {
+      if (!silent) setIsLoading(true);
+      setIsRefreshing(true);
+
       const token = user?.accessToken;
       if (!token) {
-        console.error("SOSAlertTracker: No access token available. User:", user);
+        console.error("❌ SOSAlertTracker: No access token");
         setIsLoading(false);
         setIsRefreshing(false);
+        toast.error("Authentication Required", {
+          description: "Please sign in to view SOS alerts"
+        });
         return;
       }
 
-      console.log("SOSAlertTracker: Loading alerts with token:", token.substring(0, 10) + '...');
-      const data = await getSOSAlerts(token, "all");
-      console.log("SOSAlertTracker: Alerts loaded successfully:", data);
-      setAlerts(data.alerts || []);
+      console.log("📡 SOSAlertTracker: Loading alerts with filter:", statusFilter);
+      const data = await getSOSAlerts(token, statusFilter);
+      console.log("✅ SOSAlertTracker: Loaded", data?.alerts?.length || 0, "alerts");
+      setAlerts(data?.alerts || []);
     } catch (error: any) {
-      console.error("SOSAlertTracker: Failed to load SOS alerts:", error.message || error);
+      console.error("❌ SOSAlertTracker: Failed to load alerts:", error.message);
       if (!silent) {
-        toast.error("Failed to load alerts", {
+        toast.error("Failed to load SOS alerts", {
           description: error.message || "Could not connect to server",
         });
       }

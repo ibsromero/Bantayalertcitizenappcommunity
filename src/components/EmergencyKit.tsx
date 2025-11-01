@@ -102,9 +102,11 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
           saveToStorage("EMERGENCY_KIT", data.categories);
           saveToStorage("FAMILY_MEMBERS", data.familyMembers || 4);
         }
+      }).catch(error => {
+        console.error('Error loading emergency kit:', error);
       });
     }
-  }, [user]);
+  }, [user?.accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Save to storage and cloud whenever kit changes
   useEffect(() => {
@@ -114,7 +116,7 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
     if (user?.accessToken) {
       saveUserData("emergency_kit", { categories: kitCategories, familyMembers }, user.accessToken);
     }
-  }, [kitCategories, familyMembers, user]);
+  }, [kitCategories, familyMembers, user?.accessToken]);
 
   // Calculate suggested quantities based on family members
   const calculateQuantity = (item: KitItem): string => {

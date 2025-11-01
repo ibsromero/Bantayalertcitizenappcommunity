@@ -51,26 +51,24 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
       // Check for department credentials
       if (userType === "department") {
         try {
+          // Validate that the email/password match the selected department role
+          const expectedCredentials = DEPARTMENT_CREDENTIALS[departmentRole];
+          
+          if (loginForm.email !== expectedCredentials.email || loginForm.password !== expectedCredentials.password) {
+            toast.error("Invalid credentials for selected department", {
+              description: `Please use the correct email and password for ${expectedCredentials.name}`,
+            });
+            setIsLoading(false);
+            return;
+          }
+          
           const { projectId, publicAnonKey } = await import("../utils/supabase/info");
           
-          const response = await fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-dd0f68d8/department/signin`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${publicAnonKey}`
-              },
-              body: JSON.stringify({
-                email: loginForm.email,
-                password: loginForm.password
-              })
-            }
-          );
-
-          const data = await response.json();
-
-          if (!response.ok || data.error) {
+          // Try client-side auth first (temporary workaround for server deployment issues)
+          const { clientSideDepartmentSignIn } = await import("../utils/clientSideDepartmentAuth");
+          const clientResult = await clientSideDepartmentSignIn(loginForm.email, loginForm.password);
+          
+          if (!clientResult.success || !clientResult.session) {
             toast.error("Invalid department credentials", {
               description: "Please check your email and password",
             });
@@ -78,23 +76,28 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
             return;
           }
 
-          console.log("Department login successful:", {
-            name: data.session.name,
-            role: data.session.role,
-            tokenPrefix: data.session.token?.substring(0, 15) + '...'
+          console.log("✅ Department login successful:", {
+            name: clientResult.session.name,
+            role: clientResult.session.role,
+            department: clientResult.session.department,
+            tokenPrefix: clientResult.session.token?.substring(0, 20) + '...',
+            tokenHasPeriod: clientResult.session.token?.includes('.'),
+            tokenLength: clientResult.session.token?.length,
+            tokenParts: clientResult.session.token?.substring(5).split(".").length
           });
 
           // Store session token
+          console.log("Calling onLogin with department credentials...");
           onLogin(
-            data.session.email, 
-            data.session.name, 
-            data.session.token, 
+            clientResult.session.email, 
+            clientResult.session.name, 
+            clientResult.session.token, 
             "department", 
-            data.session.role
+            clientResult.session.role
           );
           
-          toast.success(`Welcome ${data.session.name}!`, {
-            description: `Signed in to ${data.session.department}`,
+          toast.success(`Welcome ${clientResult.session.name}!`, {
+            description: `Signed in to ${clientResult.session.department} (Client Auth)`,
           });
           onClose();
           setIsLoading(false);
@@ -247,7 +250,10 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                       type="button"
                       variant={userType === "citizen" ? "default" : "outline"}
                       className="w-full"
-                      onClick={() => setUserType("citizen")}
+                      onClick={() => {
+                        setUserType("citizen");
+                        setLoginForm({ email: "demo@bantayalert.ph", password: "demo123" });
+                      }}
                     >
                       <UserCircle className="mr-2 h-4 w-4" />
                       Citizen
@@ -256,7 +262,12 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                       type="button"
                       variant={userType === "department" ? "default" : "outline"}
                       className="w-full"
-                      onClick={() => setUserType("department")}
+                      onClick={() => {
+                        setUserType("department");
+                        // Auto-fill with default LGU credentials
+                        const creds = DEPARTMENT_CREDENTIALS.lgu;
+                        setLoginForm({ email: creds.email, password: creds.password });
+                      }}
                     >
                       <Building2 className="mr-2 h-4 w-4" />
                       Department
@@ -268,9 +279,14 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                 {userType === "department" && (
                   <div className="space-y-2">
                     <Label htmlFor="department-role">Department Role</Label>
-                    <Select value={departmentRole} onValueChange={(value: DepartmentRole) => setDepartmentRole(value)}>
+                    <Select value={departmentRole} onValueChange={(value: DepartmentRole) => {
+                      setDepartmentRole(value);
+                      // Auto-fill credentials when role changes
+                      const creds = DEPARTMENT_CREDENTIALS[value];
+                      setLoginForm({ email: creds.email, password: creds.password });
+                    }}>
                       <SelectTrigger id="department-role">
-                        <SelectValue />
+                        <SelectValue placeholder="Select your department" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="lgu">LGU Administrator</SelectItem>
@@ -279,6 +295,9 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                         <SelectItem value="disaster_management">Disaster Management (NDRRMC)</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-500">
+                      Credentials auto-filled for selected department
+                    </p>
                   </div>
                 )}
 
@@ -288,7 +307,15 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                     {userType === "citizen" ? (
                       <>Demo: Use <strong>demo@bantayalert.ph</strong> / <strong>demo123</strong></>
                     ) : (
-                      <>Department credentials are pre-configured. Contact admin for access.</>
+                      <>
+                        {departmentRole && (
+                          <>
+                            <strong>{DEPARTMENT_CREDENTIALS[departmentRole].name}</strong><br />
+                            Email: <strong>{DEPARTMENT_CREDENTIALS[departmentRole].email}</strong><br />
+                            Password: <strong>{DEPARTMENT_CREDENTIALS[departmentRole].password}</strong>
+                          </>
+                        )}
+                      </>
                     )}
                   </AlertDescription>
                 </Alert>
@@ -305,6 +332,7 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                         className="pl-10"
                         value={loginForm.email}
                         onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                        autoComplete="off"
                         required
                       />
                     </div>
@@ -321,6 +349,7 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                         className="pl-10 pr-10"
                         value={loginForm.password}
                         onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                        autoComplete="off"
                         required
                       />
                       <Button

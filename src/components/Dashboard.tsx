@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { getActivities, getRelativeTime, logActivity } from "../utils/activityUtils";
 import { getFromStorage, saveToStorage } from "../utils/storageUtils";
+import { SOSButton } from "./SOSButton";
 
 interface DashboardProps {
   onNavigate: (section: string) => void;
@@ -34,7 +35,7 @@ export function Dashboard({ onNavigate, user }: DashboardProps) {
     };
 
     loadData();
-  }, [user]);
+  }, [user?.accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const quickActions = [
     { id: "emergency", icon: Phone, label: "Emergency Contacts", color: "bg-red-500" },
@@ -47,6 +48,20 @@ export function Dashboard({ onNavigate, user }: DashboardProps) {
 
   return (
     <div className="p-4 space-y-6">
+      {/* SOS Emergency Button */}
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="p-4">
+          <div className="flex flex-col items-center space-y-3">
+            <h3 className="font-semibold text-red-900">Emergency Alert</h3>
+            <p className="text-sm text-red-700 text-center">
+              In case of emergency, send an SOS alert to notify responders immediately
+              {!user && " (no sign-in required)"}
+            </p>
+            <SOSButton user={user} />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Alert Banner */}
       <Card className="border-orange-200 bg-orange-50">
         <CardContent className="p-4">

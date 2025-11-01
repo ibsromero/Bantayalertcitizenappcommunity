@@ -42,7 +42,7 @@ export function WeatherAlerts({ user }: WeatherAlertsProps) {
     if (user?.accessToken) {
       saveUserData("location", { city: currentLocation, coords: currentCoords }, user.accessToken);
     }
-  }, [currentLocation, currentCoords, user]);
+  }, [currentLocation, currentCoords, user?.accessToken]);
 
   const handleDetectLocation = async () => {
     if (!isGeolocationAvailable()) {

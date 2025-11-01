@@ -11,21 +11,22 @@ export interface Coordinates {
 /**
  * Get user's current location
  */
-export async function getCurrentLocation(): Promise<Coordinates> {
+export async function getCurrentLocation(): Promise<{ lat: number; lng: number }> {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Geolocation is not supported by this browser'));
+    if (!isGeolocationAvailable()) {
+      reject(new Error("Geolocation not available"));
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
         });
       },
       (error) => {
+        // Don't log geolocation errors to console as they're expected when permission is denied
         reject(error);
       },
       {
