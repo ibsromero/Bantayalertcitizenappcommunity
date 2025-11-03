@@ -104,17 +104,25 @@ export function SOSButton({ user }: SOSButtonProps) {
       console.log("Sending SOS alert:", alertData);
 
       // Send to department through API
-      await createSOSAlert(alertData);
+      const result = await createSOSAlert(alertData);
 
       // Log the activity (only if authenticated)
       if (user?.accessToken) {
         logActivity("sos_sent", `SOS alert sent: ${message}`, user.accessToken);
       }
 
-      toast.success("SOS Alert Sent!", {
-        description: "Emergency responders have been notified of your location and situation. Stay safe!",
-        duration: 5000,
-      });
+      // Show success message (different message for local mode)
+      if (result._localOnly) {
+        toast.warning("⚠️ SOS Alert Saved Locally", {
+          description: "Edge Function not deployed. Alert saved to browser only. Deploy functions for real emergency response. Call 911 for immediate help!",
+          duration: 8000,
+        });
+      } else {
+        toast.success("SOS Alert Sent!", {
+          description: "Emergency responders have been notified of your location and situation. Stay safe!",
+          duration: 5000,
+        });
+      }
 
       setShowDialog(false);
       setMessage("");

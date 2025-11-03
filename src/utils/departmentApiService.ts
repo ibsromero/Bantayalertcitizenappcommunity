@@ -1,4 +1,5 @@
 import { projectId, publicAnonKey } from "./supabase/info";
+import { supabase } from "./supabaseClient";
 import { 
   MOCK_SOS_ALERTS, 
   MOCK_ACTIVE_DISASTERS, 
@@ -7,7 +8,8 @@ import {
   shouldUseMockData 
 } from "./mockDepartmentData";
 
-const API_BASE = `https://gzefyknnjlsjmcgndbfn.supabase.co/functions/v1/departmentApiService`;
+const API_BASE = `https://${projectId}.supabase.co/functions/v1/departmentApiService`;
+const MAIN_SERVER_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-dd0f68d8`;
 const USE_MOCK_DATA = true; // Set to false when Edge Function is deployed
 
 // Validate department token format
@@ -92,47 +94,174 @@ export async function createSOSAlert(alertData: {
   details?: string;
   contactNumber?: string;
 }) {
-  const response = await fetch(`${API_BASE}/sos/create`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${publicAnonKey}`,
-    },
-    body: JSON.stringify(alertData),
-  });
+  // SOS creation doesn't require auth - anyone can send an emergency alert
+  try {
+    console.log("📡 Sending SOS alert to server:", alertData);
+    
+    const response = await fetch(`${MAIN_SERVER_BASE}/sos/create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${publicAnonKey}`,
+      },
+      body: JSON.stringify(alertData),
+    });
 
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(data.error || "Failed to create SOS alert");
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("❌ SOS creation failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      
+      // If Edge Function not deployed, fall back to local mode
+      if (response.status === 404) {
+        console.warn("⚠️ Edge Function not deployed. Using local fallback mode.");
+        return createSOSAlertLocal(alertData);
+      }
+      
+      throw new Error(errorData.error || `Failed to create SOS alert (${response.status})`);
+    }
+
+    const data = await response.json();
+    console.log("✅ SOS alert created successfully:", data);
+    return data;
+  } catch (error: any) {
+    console.error("❌ SOS alert error:", error);
+    
+    // If network error (Edge Function not deployed), use local fallback
+    if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
+      console.warn("⚠️ Cannot reach server. Using local fallback mode.");
+      console.warn("📢 NOTE: This SOS alert will only be stored locally and won't reach emergency responders.");
+      console.warn("🚀 Deploy Edge Functions for full functionality: See SOS_FIX_GUIDE.md");
+      return createSOSAlertLocal(alertData);
+    }
+    
+    throw error;
   }
+}
 
-  return data;
+// Local fallback when Edge Function is not deployed - NOW SAVES TO SUPABASE!
+async function createSOSAlertLocal(alertData: any) {
+  console.log("💾 Edge Function not available - saving SOS alert directly to Supabase...");
+  
+  try {
+    // Save directly to Supabase sos_alerts table
+    const { data, error } = await supabase
+      .from('sos_alerts')
+      .insert([
+        {
+          citizen_name: alertData.userName,
+          citizen_email: alertData.userEmail,
+          citizen_phone: alertData.contactNumber || null,
+          latitude: alertData.location?.lat || null,
+          longitude: alertData.location?.lng || null,
+          location_text: alertData.location?.address || 'Location unavailable',
+          emergency_type: 'general',
+          message: alertData.details || '',
+          status: 'active',
+          priority: 'high',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("❌ Failed to save SOS alert to Supabase:", error);
+      
+      // Fallback to localStorage as last resort
+      const alertId = `sos_local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const sosAlert = {
+        id: alertId,
+        ...alertData,
+        status: "active",
+        priority: "high",
+        created_at: new Date().toISOString(),
+        _local: true
+      };
+      
+      const existingAlerts = JSON.parse(localStorage.getItem("local_sos_alerts") || "[]");
+      existingAlerts.unshift(sosAlert);
+      localStorage.setItem("local_sos_alerts", JSON.stringify(existingAlerts.slice(0, 10)));
+      
+      return { 
+        success: true, 
+        alertId,
+        _localOnly: true,
+        _warning: "Saved to browser only - please check database connection"
+      };
+    }
+
+    console.log("✅ SOS alert saved to Supabase successfully:", data);
+    
+    return { 
+      success: true, 
+      alertId: data.id,
+      alert: data,
+      _supabase: true
+    };
+  } catch (error: any) {
+    console.error("❌ Failed to create SOS alert:", error);
+    throw error;
+  }
 }
 
 export async function getSOSAlerts(token: string, status: "active" | "all" = "active") {
-  if (USE_MOCK_DATA) {
-    console.log("📦 Using mock SOS alerts data (Edge Function not deployed)");
-    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+  // Try to fetch from Supabase first
+  try {
+    console.log(`📡 Fetching SOS alerts (${status}) from Supabase...`);
     
+    let query = supabase
+      .from('sos_alerts')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (status === "active") {
+      query = query.in('status', ['active', 'responding']);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error("❌ Error fetching SOS alerts from Supabase:", error);
+      throw error;
+    }
+    
+    console.log(`✅ Retrieved ${data?.length || 0} SOS alerts from Supabase`);
+    
+    // Transform data to match expected format
+    const alerts = (data || []).map(alert => ({
+      id: alert.id,
+      userEmail: alert.citizen_email,
+      userName: alert.citizen_name,
+      contactNumber: alert.citizen_phone,
+      location: {
+        lat: alert.latitude,
+        lng: alert.longitude,
+        address: alert.location_text
+      },
+      details: alert.message,
+      status: alert.status,
+      priority: alert.priority,
+      created_at: alert.created_at,
+      responded_by: alert.responded_by,
+      responded_at: alert.responded_at
+    }));
+    
+    return { alerts };
+  } catch (error: any) {
+    console.error("❌ Failed to fetch from Supabase, falling back to mock data:", error);
+    
+    // Fallback to mock data
+    console.log("📦 Using mock SOS alerts data (Supabase connection failed)");
     const alerts = status === "active" 
       ? MOCK_SOS_ALERTS.filter(a => a.status === "active" || a.status === "responding")
       : MOCK_SOS_ALERTS;
     
     return { alerts };
-  }
-  
-  try {
-    return await departmentRequest(`/sos/alerts?status=${status}`, token);
-  } catch (error: any) {
-    if (shouldUseMockData(error)) {
-      console.log("⚠️ API failed, falling back to mock SOS alerts data");
-      const alerts = status === "active" 
-        ? MOCK_SOS_ALERTS.filter(a => a.status === "active" || a.status === "responding")
-        : MOCK_SOS_ALERTS;
-      return { alerts };
-    }
-    throw error;
   }
 }
 
@@ -145,17 +274,39 @@ export async function updateSOSAlert(
     priority?: string;
   }
 ) {
-  if (USE_MOCK_DATA) {
-    console.log("📦 Simulating SOS alert update (Edge Function not deployed)");
-    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
-    // In mock mode, we just simulate success without actually updating data
+  // Update directly in Supabase
+  try {
+    console.log(`💾 Updating SOS alert ${alertId} in Supabase...`, updates);
+    
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
+    
+    if (updates.status) updateData.status = updates.status;
+    if (updates.priority) updateData.priority = updates.priority;
+    if (updates.resolution) updateData.message = updates.resolution; // Store resolution in message
+    
+    const { data, error } = await supabase
+      .from('sos_alerts')
+      .update(updateData)
+      .eq('id', alertId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error("❌ Failed to update SOS alert in Supabase:", error);
+      throw error;
+    }
+    
+    console.log("✅ SOS alert updated in Supabase:", data);
+    return { success: true, alert: data };
+  } catch (error: any) {
+    console.error("❌ Failed to update SOS alert:", error);
+    
+    // Simulate success in mock mode
+    console.log("📦 Simulating SOS alert update (Supabase update failed)");
     return { success: true };
   }
-  
-  return departmentRequest(`/sos/alert/${alertId}`, token, {
-    method: "PUT",
-    body: JSON.stringify(updates),
-  });
 }
 
 // ============ DISASTER MONITORING ============

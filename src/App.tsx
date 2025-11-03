@@ -344,7 +344,7 @@ export default function App() {
           );
         }
         
-        return <DepartmentDashboard user={user} />;
+        return <DepartmentDashboard user={user} initialSection={currentSection} />;
       } catch (error) {
         console.error("Error rendering DepartmentDashboard:", error);
         return (
@@ -401,12 +401,11 @@ export default function App() {
         onNavigate={handleNavigate}
       />
       
-
-      
       {/* Only show navigation for citizen users */}
       {user?.userType !== "department" && (
         <Navigation currentSection={currentSection} onBack={handleBack} />
       )}
+      
       <main className="pb-safe" style={showTokenError ? { marginTop: '120px' } : {}}>
         <ErrorBoundary
           onError={(error, errorInfo) => {
@@ -420,6 +419,7 @@ export default function App() {
           {renderCurrentSection()}
         </ErrorBoundary>
       </main>
+      
       <Toaster />
     </div>
   );

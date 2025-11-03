@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Package, Plus, Check, AlertCircle, Battery, Droplets, Users } from "lucide-react";
+import { Package, Plus, Check, AlertCircle, Battery, Droplets, Users, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
+import { Checkbox } from "./ui/checkbox";
 import { toast } from "sonner@2.0.3";
 import { ExpirationCheckDialog } from "./ExpirationCheckDialog";
 import { EquipmentTestDialog } from "./EquipmentTestDialog";
@@ -48,6 +49,7 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
     quantity: "",
     status: "missing" as const,
     priority: "medium" as const,
+    perPerson: false,
   });
 
   const getDefaultKitData = () => ({
@@ -174,7 +176,7 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
       toast.success("Item added to kit");
       logActivity("kit_item_added", `Added ${newItem.name} to emergency kit`, user?.accessToken);
 
-      setNewItem({ name: "", quantity: "", status: "missing", priority: "medium" });
+      setNewItem({ name: "", quantity: "", status: "missing", priority: "medium", perPerson: false });
       setShowAddItemDialog(false);
     }
   };
@@ -189,8 +191,21 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
     logActivity("kit_tested", "Tested equipment", user?.accessToken);
   };
 
+  const handleDeleteItem = (category: string, itemIndex: number) => {
+    const itemName = kitCategories[category as keyof typeof kitCategories].items[itemIndex].name;
+    
+    setKitCategories(prev => {
+      const updated = { ...prev };
+      (updated[category as keyof typeof prev].items as any[]).splice(itemIndex, 1);
+      return updated;
+    });
+
+    toast.success("Item removed from kit");
+    logActivity("kit_item_deleted", `Removed ${itemName} from emergency kit`, user?.accessToken);
+  };
+
   const KitItem = ({ item, category, index }: any) => (
-    <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+    <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0 group">
       <div className="flex-1">
         <p className="font-medium text-sm">{item.name}</p>
         <p className="text-xs text-gray-500">
@@ -213,6 +228,14 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
             <SelectItem value="na">N/A</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={() => handleDeleteItem(category, index)}
+        >
+          <Trash2 className="h-4 w-4 text-red-600" />
+        </Button>
       </div>
     </div>
   );
@@ -445,6 +468,16 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
                   <SelectItem value="low">Low</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="perPerson"
+                checked={newItem.perPerson}
+                onCheckedChange={(checked) => setNewItem(prev => ({ ...prev, perPerson: !!checked }))}
+              />
+              <Label htmlFor="perPerson" className="text-sm cursor-pointer">
+                Scale quantity per family member
+              </Label>
             </div>
           </div>
           <DialogFooter>

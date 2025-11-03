@@ -15,19 +15,33 @@ export const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-
  */
 export async function signUp(email: string, password: string, name: string) {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${publicAnonKey}`,
+    // Use Supabase's built-in auth signup
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: name,
+        },
       },
-      body: JSON.stringify({ email, password, name }),
     });
 
-    const data = await response.json();
+    if (error) throw error;
 
-    if (!response.ok) {
-      throw new Error(data.error || "Signup failed");
+    // If signup successful, create user profile
+    if (data.user) {
+      try {
+        await supabase.from('user_profiles').insert([{
+          user_id: data.user.id,
+          email: email,
+          name: name,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }]);
+      } catch (profileError) {
+        console.error('Error creating user profile:', profileError);
+        // Don't fail signup if profile creation fails
+      }
     }
 
     return { data, error: null };

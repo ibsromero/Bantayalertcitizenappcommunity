@@ -25,9 +25,10 @@ interface DepartmentDashboardProps {
     userType?: string;
     departmentRole?: DepartmentRole;
   };
+  initialSection?: string;
 }
 
-export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
+export function DepartmentDashboard({ user, initialSection }: DepartmentDashboardProps) {
   console.log("🔵 DepartmentDashboard rendering with user:", {
     name: user.name,
     email: user.email,
@@ -38,7 +39,22 @@ export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
     departmentRole: user.departmentRole
   });
 
-  const [activeTab, setActiveTab] = useState("overview");
+  // Map section names to tab values
+  const getTabFromSection = (section?: string) => {
+    if (!section || !section.startsWith('dashboard-')) return "overview";
+    const tabName = section.replace('dashboard-', '');
+    // Map to valid tab names
+    if (tabName === 'overview') return 'overview';
+    if (tabName === 'sos') return 'sos';
+    if (tabName === 'monitoring') return 'monitoring';
+    if (tabName === 'healthcare') return 'healthcare';
+    if (tabName === 'analytics') return 'overview'; // Analytics shown in overview
+    if (tabName === 'evacuee') return 'overview'; // Evacuee management shown in overview
+    if (tabName === 'map') return 'map';
+    return 'overview';
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabFromSection(initialSection));
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [stats, setStats] = useState({
@@ -50,6 +66,14 @@ export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
   const [sosChannel, setSosChannel] = useState<RealtimeChannel | null>(null);
   const [disasterChannel, setDisasterChannel] = useState<RealtimeChannel | null>(null);
   const [hospitalChannel, setHospitalChannel] = useState<RealtimeChannel | null>(null);
+
+  // Update active tab when section changes
+  useEffect(() => {
+    const newTab = getTabFromSection(initialSection);
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [initialSection]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     console.log("🔵 DepartmentDashboard useEffect triggered - Setting up real-time subscriptions");
@@ -217,32 +241,7 @@ export function DepartmentDashboard({ user }: DepartmentDashboardProps) {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      {/* Mock Data Banner */}
-      <MockDataBanner />
-      
-      {/* Database Setup Check */}
-      <DatabaseSetupChecker />
-      
-      {/* Debug Info - Shows in all environments for now to help troubleshooting */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <p className="text-xs font-mono">
-                <strong>Session:</strong> {user.name} | {user.departmentRole?.toUpperCase()} | Token Format: {user.accessToken?.includes('.') ? '✓ Valid (New)' : '✗ Invalid (Old)'}
-              </p>
-              <p className="text-xs font-mono mt-1 text-gray-600">
-                Token: {user.accessToken?.substring(0, 30)}...{user.accessToken ? user.accessToken.substring(user.accessToken.length - 10) : ''}
-              </p>
-            </div>
-            <Badge variant={user.accessToken?.includes('.') ? 'default' : 'destructive'}>
-              {user.accessToken?.includes('.') ? 'Ready' : 'Token Issue'}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-      
+    <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg p-6">
         <div className="flex items-center justify-between">

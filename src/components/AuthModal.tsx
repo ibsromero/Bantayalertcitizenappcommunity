@@ -128,20 +128,9 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
       const { data, error } = await signIn(loginForm.email, loginForm.password);
 
       if (error) {
-        // Fallback to demo mode for any email/password
-        if (loginForm.email && loginForm.password) {
-          const name = loginForm.email.split('@')[0];
-          const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-          onLogin(loginForm.email, capitalizedName, undefined, "citizen");
-          toast.success("Welcome!", {
-            description: "Successfully signed in to BantayAlert (Demo Mode)",
-          });
-          onClose();
-        } else {
-          toast.error("Login failed", {
-            description: "Please enter valid credentials",
-          });
-        }
+        toast.error("Login failed", {
+          description: "Invalid email or password. Please try again or sign up for a new account.",
+        });
       } else if (data?.session) {
         const userName = data.user.user_metadata?.name || data.user.email?.split('@')[0] || "User";
         onLogin(data.user.email || "", userName, data.session.access_token, "citizen");
@@ -180,38 +169,40 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
     setIsLoading(true);
 
     try {
-      // Try real Supabase signup
+      // Use Supabase auth signup
       const { data, error } = await signUp(signupForm.email, signupForm.password, signupForm.name);
 
       if (error) {
-        // Fallback to demo mode
-        onLogin(signupForm.email, signupForm.name, undefined, "citizen");
-        toast.success("Account created!", {
-          description: "Welcome to BantayAlert (Demo Mode)",
+        console.error("Signup error:", error);
+        toast.error("Signup failed", {
+          description: error instanceof Error ? error.message : "Could not create account. Please try again.",
         });
-        onClose();
-      } else if (data?.session) {
-        onLogin(signupForm.email, signupForm.name, data.session.access_token, "citizen");
-        toast.success("Account created!", {
-          description: "Welcome to BantayAlert! Please check your email to verify your account.",
-        });
-        onClose();
+      } else if (data?.user) {
+        // Signup successful - check if we have a session (auto-confirm) or need email confirmation
+        if (data.session) {
+          // Auto-confirmed - log in immediately
+          onLogin(signupForm.email, signupForm.name, data.session.access_token, "citizen");
+          toast.success("Account created!", {
+            description: "Welcome to BantayAlert!",
+          });
+          onClose();
+        } else {
+          // Email confirmation required
+          toast.success("Account created!", {
+            description: "Please check your email to verify your account, then sign in.",
+          });
+          onClose();
+        }
       } else {
-        // No session but no error - still allow demo mode
-        onLogin(signupForm.email, signupForm.name, undefined, "citizen");
-        toast.success("Account created!", {
-          description: "Welcome to BantayAlert!",
+        toast.error("Signup failed", {
+          description: "An unexpected error occurred. Please try again.",
         });
-        onClose();
       }
     } catch (error) {
       console.error("Signup error:", error);
-      // Still allow demo mode on error
-      onLogin(signupForm.email, signupForm.name, undefined, "citizen");
-      toast.success("Account created!", {
-        description: "Welcome to BantayAlert (Demo Mode)",
+      toast.error("Signup failed", {
+        description: "Could not create account. Please try again.",
       });
-      onClose();
     } finally {
       setIsLoading(false);
     }

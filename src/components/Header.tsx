@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Menu, Settings, User, LogOut, Phone, Package, MapPin, BookOpen, ListChecks, CloudRain, X, AlertTriangle } from "lucide-react";
+import { Bell, Menu, Settings, User, LogOut, Phone, Package, MapPin, BookOpen, ListChecks, CloudRain, X, AlertTriangle, Shield, Activity, Heart, TrendingUp, Users } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -176,70 +176,130 @@ export function Header({ user, onLogin, onLogout, onNavigate }: HeaderProps) {
           <SheetHeader>
             <SheetTitle>BantayAlert</SheetTitle>
             <SheetDescription>
-              Emergency Response System
+              {user?.userType === "department" 
+                ? `${user.departmentRole?.toUpperCase().replace('_', ' ')} Command Center`
+                : "Emergency Response System"}
             </SheetDescription>
           </SheetHeader>
           
-          {/* SOS Button in Sidebar - only for citizen view */}
-          {user?.userType !== "department" && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex flex-col items-center space-y-2">
-                <p className="text-xs text-red-900 font-medium text-center">Emergency Alert</p>
-                <SOSButton user={user} />
+          {/* Department Navigation */}
+          {user?.userType === "department" ? (
+            <div className="mt-6 space-y-2">
+              <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Department Features
               </div>
+              <Button
+                variant="ghost"
+                className="w-full justify-start touch-manipulation min-h-[48px]"
+                onClick={() => handleNavigateAndClose('dashboard-overview')}
+              >
+                <Activity className="h-5 w-5 mr-3" />
+                Dashboard Overview
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start touch-manipulation min-h-[48px]"
+                onClick={() => handleNavigateAndClose('dashboard-sos')}
+              >
+                <Shield className="h-5 w-5 mr-3 text-red-600" />
+                SOS Alerts
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start touch-manipulation min-h-[48px]"
+                onClick={() => handleNavigateAndClose('dashboard-monitoring')}
+              >
+                <AlertTriangle className="h-5 w-5 mr-3 text-orange-600" />
+                Disaster Monitoring
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start touch-manipulation min-h-[48px]"
+                onClick={() => handleNavigateAndClose('dashboard-healthcare')}
+              >
+                <Heart className="h-5 w-5 mr-3 text-pink-600" />
+                Healthcare Network
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start touch-manipulation min-h-[48px]"
+                onClick={() => handleNavigateAndClose('dashboard-analytics')}
+              >
+                <TrendingUp className="h-5 w-5 mr-3 text-blue-600" />
+                Analytics & Reports
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start touch-manipulation min-h-[48px]"
+                onClick={() => handleNavigateAndClose('dashboard-evacuee')}
+              >
+                <Users className="h-5 w-5 mr-3 text-green-600" />
+                Evacuee Management
+              </Button>
             </div>
+          ) : (
+            /* Citizen Navigation */
+            <>
+              {/* SOS Button in Sidebar */}
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex flex-col items-center space-y-2">
+                  <p className="text-xs text-red-900 font-medium text-center">Emergency Alert</p>
+                  <SOSButton user={user} />
+                </div>
+              </div>
+              
+              <div className="mt-6 space-y-2">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start touch-manipulation min-h-[48px]"
+                  onClick={() => handleNavigateAndClose("emergency")}
+                >
+                  <Phone className="h-5 w-5 mr-3" />
+                  Emergency Contacts
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start touch-manipulation min-h-[48px]"
+                  onClick={() => handleNavigateAndClose("checklist")}
+                >
+                  <ListChecks className="h-5 w-5 mr-3" />
+                  Preparation Checklist
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start touch-manipulation min-h-[48px]"
+                  onClick={() => handleNavigateAndClose("kit")}
+                >
+                  <Package className="h-5 w-5 mr-3" />
+                  Emergency Kit
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start touch-manipulation min-h-[48px]"
+                  onClick={() => handleNavigateAndClose("alerts")}
+                >
+                  <CloudRain className="h-5 w-5 mr-3" />
+                  Weather Alerts
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start touch-manipulation min-h-[48px]"
+                  onClick={() => handleNavigateAndClose("evacuation")}
+                >
+                  <MapPin className="h-5 w-5 mr-3" />
+                  Evacuation Routes
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start touch-manipulation min-h-[48px]"
+                  onClick={() => handleNavigateAndClose("resources")}
+                >
+                  <BookOpen className="h-5 w-5 mr-3" />
+                  Resources
+                </Button>
+              </div>
+            </>
           )}
-          
-          <div className="mt-6 space-y-2">
-            <Button
-              variant="ghost"
-              className="w-full justify-start touch-manipulation min-h-[48px]"
-              onClick={() => handleNavigateAndClose("emergency")}
-            >
-              <Phone className="h-5 w-5 mr-3" />
-              Emergency Contacts
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start touch-manipulation min-h-[48px]"
-              onClick={() => handleNavigateAndClose("checklist")}
-            >
-              <ListChecks className="h-5 w-5 mr-3" />
-              Preparation Checklist
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start touch-manipulation min-h-[48px]"
-              onClick={() => handleNavigateAndClose("kit")}
-            >
-              <Package className="h-5 w-5 mr-3" />
-              Emergency Kit
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start touch-manipulation min-h-[48px]"
-              onClick={() => handleNavigateAndClose("alerts")}
-            >
-              <CloudRain className="h-5 w-5 mr-3" />
-              Weather Alerts
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start touch-manipulation min-h-[48px]"
-              onClick={() => handleNavigateAndClose("evacuation")}
-            >
-              <MapPin className="h-5 w-5 mr-3" />
-              Evacuation Routes
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start touch-manipulation min-h-[48px]"
-              onClick={() => handleNavigateAndClose("resources")}
-            >
-              <BookOpen className="h-5 w-5 mr-3" />
-              Resources
-            </Button>
-          </div>
 
           {user && (
             <div className="absolute bottom-6 left-6 right-6 space-y-2 border-t pt-4">
