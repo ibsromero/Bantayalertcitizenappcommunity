@@ -4,6 +4,11 @@ A comprehensive disaster preparedness and emergency response application for NCR
 
 ## 🚀 Quick Start
 
+### First-Time Setup (Required):
+1. **Database Setup**: Run `COMPLETE_SUPABASE_SETUP.sql` in [Supabase SQL Editor](https://app.supabase.com/project/gzefyknnjlsjmcgndbfn/editor)
+2. **Disable Email Confirmation**: Go to Supabase → Authentication → Settings → Toggle OFF "Confirm email"
+3. **Enable Real-time**: Go to Supabase → Database → Replication → Enable all tables
+
 ### For Users:
 1. Open the app in your browser or Android device
 2. **Sign Up** - Create an account (no email verification needed)
@@ -19,14 +24,13 @@ Use these pre-configured accounts:
 
 ## 📚 Essential Documentation
 
-### Setup & Configuration:
-- **[COMPLETE_SETUP_GUIDE.md](./COMPLETE_SETUP_GUIDE.md)** - Complete setup instructions for Supabase, database, real-time, and Android deployment
-- **[COMPLETE_SUPABASE_SETUP.sql](./COMPLETE_SUPABASE_SETUP.sql)** - Database setup SQL (run this in Supabase SQL Editor)
-- **[CREDENTIALS.md](./CREDENTIALS.md)** - All login credentials and API keys
-
-### Features & Usage:
-- **[ESSENTIAL_GUIDE.md](./ESSENTIAL_GUIDE.md)** - Core features and usage guide
-- **[DEPLOY.md](./DEPLOY.md)** - Deployment instructions
+- **[COMPLETE_SETUP_GUIDE.md](./COMPLETE_SETUP_GUIDE.md)** - Complete setup and deployment guide
+- **[COMPLETE_SUPABASE_SETUP.sql](./COMPLETE_SUPABASE_SETUP.sql)** - Database setup SQL (run in Supabase SQL Editor)
+- **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)** - Step-by-step deployment checklist
+- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues and solutions
+- **[TEST_CHECKLIST.md](./TEST_CHECKLIST.md)** - Comprehensive testing checklist
+- **[COMPREHENSIVE_ERROR_CHECK.md](./COMPREHENSIVE_ERROR_CHECK.md)** - Full validation report
+- **[CREDENTIALS.md](./CREDENTIALS.md)** - Login credentials and API keys
 
 ## ✨ Key Features
 
@@ -89,19 +93,58 @@ All tables have real-time enabled:
 - Disaster updates broadcast to all connected clients
 - No page refresh needed - data updates automatically
 
+## 🌐 Web Deployment (GitHub Pages)
+
+### Automatic Deployment:
+1. Push code to GitHub
+2. GitHub Actions automatically builds and deploys
+3. Access at: `https://[your-username].github.io/[repo-name]`
+
+### Manual Deployment:
+```bash
+npm install
+npm run build
+# Deploy the 'dist' folder to your hosting service
+```
+
+### Supported Platforms:
+- ✅ GitHub Pages
+- ✅ Vercel
+- ✅ Netlify
+- ✅ Any static hosting service
+
 ## 📱 Android Deployment
 
-See [COMPLETE_SETUP_GUIDE.md](./COMPLETE_SETUP_GUIDE.md) Part 6 for full Android deployment instructions using Capacitor.
-
-Quick steps:
+### Quick Start:
 ```bash
+# Install Capacitor
 npm install @capacitor/core @capacitor/cli @capacitor/android
+
+# Initialize
 npx cap init
+# App name: BantayAlert
+# Package ID: com.bantayalert.app
+
+# Build web app
 npm run build
+
+# Add Android platform
 npx cap add android
+
+# Sync files
 npx cap sync android
+
+# Open in Android Studio
 npx cap open android
 ```
+
+### Build APK:
+1. Open project in Android Studio
+2. Go to **Build** → **Build Bundle(s) / APK(s)** → **Build APK(s)**
+3. APK location: `android/app/build/outputs/apk/debug/app-debug.apk`
+4. Install on device or publish to Play Store
+
+See [COMPLETE_SETUP_GUIDE.md](./COMPLETE_SETUP_GUIDE.md) for detailed instructions.
 
 ## 🆘 Support & Issues
 

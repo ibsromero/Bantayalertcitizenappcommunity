@@ -304,7 +304,61 @@ Edit `android/app/src/main/AndroidManifest.xml` and add:
 
 ---
 
-## Part 9: Important URLs
+## Part 9: GitHub & Web Deployment
+
+### Step 1: Push to GitHub
+```bash
+# Initialize git (if not already done)
+git init
+
+# Add all files
+git add .
+
+# Commit
+git commit -m "Initial commit: BantayAlert app"
+
+# Add remote (replace with your GitHub repo URL)
+git remote add origin https://github.com/YOUR_USERNAME/bantayalert.git
+
+# Push to GitHub
+git push -u origin main
+```
+
+### Step 2: Enable GitHub Pages
+1. Go to your repository on GitHub
+2. Click **Settings** → **Pages**
+3. Under **Source**, select:
+   - Branch: `gh-pages`
+   - Folder: `/ (root)`
+4. Click **Save**
+
+### Step 3: GitHub Actions Automatic Deployment
+- Already configured in `.github/workflows/deploy.yml`
+- Automatically builds and deploys on every push to `main`
+- Access your app at: `https://YOUR_USERNAME.github.io/REPO_NAME`
+
+### Step 4: Custom Domain (Optional)
+1. Add `CNAME` file with your domain
+2. Configure DNS: Add CNAME record pointing to `YOUR_USERNAME.github.io`
+3. Update `.github/workflows/deploy.yml` with your custom domain
+
+### Alternative Hosting Options:
+
+**Vercel:**
+```bash
+npm install -g vercel
+vercel
+```
+
+**Netlify:**
+```bash
+npm install -g netlify-cli
+netlify deploy --prod
+```
+
+---
+
+## Part 10: Important URLs
 
 - **Supabase Dashboard**: https://app.supabase.com/project/gzefyknnjlsjmcgndbfn
 - **Supabase API URL**: https://gzefyknnjlsjmcgndbfn.supabase.co
@@ -313,7 +367,7 @@ Edit `android/app/src/main/AndroidManifest.xml` and add:
 
 ---
 
-## Part 10: Credentials Reference
+## Part 11: Credentials Reference
 
 ### Department Accounts:
 - **LGU**: lgu@bantayalert.ph / LGU@NCR2024
