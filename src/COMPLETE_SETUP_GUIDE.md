@@ -318,7 +318,7 @@ git add .
 git commit -m "Initial commit: BantayAlert app"
 
 # Add remote (replace with your GitHub repo URL)
-git remote add origin https://github.com/YOUR_USERNAME/bantayalert.git
+git remote add origin https://github.com/ibsromero/Bantayalertdepartment
 
 # Push to GitHub
 git push -u origin main

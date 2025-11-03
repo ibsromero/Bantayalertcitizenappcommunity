@@ -178,12 +178,12 @@ export function SOSAlertTracker({ user }: SOSAlertTrackerProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold mb-2">SOS Alert Tracker</h2>
-          <p className="text-gray-600">
-            Real-time tracking and management of citizen distress signals. Prioritize high-risk cases and allocate resources effectively.
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg sm:text-xl font-semibold mb-1 sm:mb-2">SOS Alert Tracker</h2>
+          <p className="text-xs sm:text-sm text-gray-600">
+            Real-time tracking and management of citizen distress signals.
           </p>
         </div>
         <Button
@@ -191,6 +191,7 @@ export function SOSAlertTracker({ user }: SOSAlertTrackerProps) {
           size="sm"
           onClick={() => loadAlerts()}
           disabled={isRefreshing}
+          className="w-full sm:w-auto"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
           Refresh
@@ -198,57 +199,57 @@ export function SOSAlertTracker({ user }: SOSAlertTrackerProps) {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active</p>
-                <p className="text-2xl font-bold text-red-600">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Active</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-600">
                   {alerts.filter(a => a.status === "active").length}
                 </p>
               </div>
-              <AlertCircle className="h-8 w-8 text-red-500" />
+              <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-red-500 shrink-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Responding</p>
-                <p className="text-2xl font-bold text-blue-600">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Responding</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-600">
                   {alerts.filter(a => a.status === "responding").length}
                 </p>
               </div>
-              <Navigation className="h-8 w-8 text-blue-500" />
+              <Navigation className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Critical</p>
-                <p className="text-2xl font-bold text-red-600">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Critical</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-600">
                   {alerts.filter(a => a.priority === "critical").length}
                 </p>
               </div>
-              <AlertCircle className="h-8 w-8 text-red-500 animate-pulse" />
+              <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-red-500 animate-pulse shrink-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total</p>
-                <p className="text-2xl font-bold">{alerts.length}</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Total</p>
+                <p className="text-xl sm:text-2xl font-bold">{alerts.length}</p>
               </div>
-              <User className="h-8 w-8 text-gray-500" />
+              <User className="h-6 w-6 sm:h-8 sm:w-8 text-gray-500 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -277,39 +278,39 @@ export function SOSAlertTracker({ user }: SOSAlertTrackerProps) {
               <Card key={alert.id} className="border-l-4" style={{
                 borderLeftColor: alert.priority === "critical" ? "#dc2626" : alert.priority === "high" ? "#ea580c" : "#ca8a04"
               }}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col gap-3">
                     <div className="flex-1 space-y-3">
                       {/* Header */}
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold">{alert.userName}</p>
-                            <Badge className={getUrgencyColor(alert.priority)}>
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <p className="font-semibold text-sm sm:text-base truncate">{alert.userName}</p>
+                            <Badge className={`${getUrgencyColor(alert.priority)} text-xs`}>
                               {alert.priority.toUpperCase()}
                             </Badge>
-                            <Badge variant="outline" className={getStatusColor(alert.status)}>
+                            <Badge variant="outline" className={`${getStatusColor(alert.status)} text-xs`}>
                               {alert.status.toUpperCase()}
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600">Alert ID: {alert.id}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 truncate">Alert ID: {alert.id.slice(0, 8)}...</p>
                         </div>
-                        <div className="flex items-center gap-1 text-sm text-gray-500">
-                          <Clock className="h-4 w-4" />
+                        <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-500 shrink-0">
+                          <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                           {getRelativeTime(alert.created_at)}
                         </div>
                       </div>
 
                       {/* Message */}
-                      <div className="bg-gray-50 rounded p-3">
-                        <p className="text-sm">{alert.details}</p>
+                      <div className="bg-gray-50 rounded p-2 sm:p-3">
+                        <p className="text-xs sm:text-sm break-words">{alert.details}</p>
                       </div>
 
                       {/* Location */}
-                      <div className="flex items-start gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
-                        <div>
-                          <p className="font-medium">{alert.location.address}</p>
+                      <div className="flex items-start gap-2 text-xs sm:text-sm">
+                        <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 mt-0.5 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium break-words">{alert.location.address}</p>
                           {alert.location.lat && alert.location.lng && (
                             <p className="text-xs text-gray-500">
                               {alert.location.lat.toFixed(4)}, {alert.location.lng.toFixed(4)}
@@ -319,36 +320,38 @@ export function SOSAlertTracker({ user }: SOSAlertTrackerProps) {
                       </div>
 
                       {/* Contact */}
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <p>{alert.contactNumber}</p>
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 shrink-0" />
+                        <p className="break-all">{alert.contactNumber}</p>
                       </div>
 
                       {/* Responded By */}
                       {alert.responded_by && (
-                        <div className="flex items-center gap-2 text-sm text-blue-600">
-                          <User className="h-4 w-4" />
-                          <p>Responded by: {alert.responded_by}</p>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-blue-600">
+                          <User className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                          <p className="truncate">Responded by: {alert.responded_by}</p>
                         </div>
                       )}
 
                       {/* Actions */}
-                      <div className="flex flex-wrap gap-2 pt-2">
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2">
                         <Button
                           size="sm"
                           variant="default"
                           onClick={() => handleDispatchTeam(alert)}
                           disabled={alert.status !== "active"}
+                          className="w-full sm:w-auto text-xs sm:text-sm"
                         >
-                          <Navigation className="h-4 w-4 mr-1" />
+                          <Navigation className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           Dispatch Team
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleCallCitizen(alert)}
+                          className="w-full sm:w-auto text-xs sm:text-sm"
                         >
-                          <Phone className="h-4 w-4 mr-1" />
+                          <Phone className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           Call Citizen
                         </Button>
                         <Button
@@ -356,18 +359,19 @@ export function SOSAlertTracker({ user }: SOSAlertTrackerProps) {
                           variant="outline"
                           onClick={() => handleNavigate(alert)}
                           disabled={!alert.location.lat || !alert.location.lng}
+                          className="w-full sm:w-auto text-xs sm:text-sm"
                         >
-                          <MapPin className="h-4 w-4 mr-1" />
+                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           Navigate
                         </Button>
                         {alert.status === "responding" && (
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-green-300 text-green-700"
+                            className="border-green-300 text-green-700 w-full sm:w-auto text-xs sm:text-sm"
                             onClick={() => handleUpdateStatus(alert.id, "resolved", "Assistance provided")}
                           >
-                            <CheckCircle className="h-4 w-4 mr-1" />
+                            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                             Mark Resolved
                           </Button>
                         )}
@@ -375,10 +379,10 @@ export function SOSAlertTracker({ user }: SOSAlertTrackerProps) {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-gray-300 text-gray-700"
+                            className="border-gray-300 text-gray-700 w-full sm:w-auto text-xs sm:text-sm"
                             onClick={() => handleUpdateStatus(alert.id, "cancelled", "False alarm")}
                           >
-                            <XCircle className="h-4 w-4 mr-1" />
+                            <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                             Cancel
                           </Button>
                         )}

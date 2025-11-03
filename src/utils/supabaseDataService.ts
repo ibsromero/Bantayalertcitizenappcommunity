@@ -574,19 +574,21 @@ export interface ActivityLog {
   id?: string;
   user_id?: string;
   activity_type: string;
-  activity_description: string;
+  activity_description?: string;
+  description?: string;
   activity_timestamp?: string;
+  created_at?: string;
   metadata?: any;
 }
 
 export async function logActivity(userId: string, activity: Omit<ActivityLog, 'id' | 'user_id' | 'activity_timestamp'>) {
   try {
     const { error } = await supabase
-      .from('activity_logs')
+      .from('user_activity_log')
       .insert([{
         user_id: userId,
         activity_type: activity.activity_type,
-        activity_description: activity.activity_description,
+        description: activity.activity_description || activity.description || '',
         metadata: activity.metadata
       }]);
 
@@ -600,10 +602,10 @@ export async function logActivity(userId: string, activity: Omit<ActivityLog, 'i
 
 export async function getActivityLogs(userId: string, limit = 50): Promise<ActivityLog[]> {
   const { data, error } = await supabase
-    .from('activity_logs')
+    .from('user_activity_log')
     .select('*')
     .eq('user_id', userId)
-    .order('activity_timestamp', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) {

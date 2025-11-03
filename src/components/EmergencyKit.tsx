@@ -56,9 +56,9 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
     food: {
       name: "Food & Water",
       items: [
-        { name: "Water (1 gallon per person per day)", quantity: "3", status: "ready", priority: "high", perPerson: true },
-        { name: "Non-perishable food (3-day supply)", quantity: "6 cans", status: "ready", priority: "high", perPerson: true },
-        { name: "Can opener", quantity: "1", status: "ready", priority: "medium", perPerson: false },
+        { name: "Water (1 gallon per person per day)", quantity: "3", status: "missing", priority: "high", perPerson: true },
+        { name: "Non-perishable food (3-day supply)", quantity: "6 cans", status: "missing", priority: "high", perPerson: true },
+        { name: "Can opener", quantity: "1", status: "missing", priority: "medium", perPerson: false },
         { name: "Emergency food bars", quantity: "3 bars", status: "missing", priority: "medium", perPerson: true },
         { name: "Baby formula/food", quantity: "N/A", status: "na", priority: "low", perPerson: false },
       ] as KitItem[]
@@ -66,10 +66,10 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
     tools: {
       name: "Tools & Supplies",
       items: [
-        { name: "Flashlight", quantity: "2", status: "ready", priority: "high", perPerson: false },
-        { name: "Battery-powered radio", quantity: "1", status: "ready", priority: "high", perPerson: false },
-        { name: "Extra batteries", quantity: "8 AA, 4 D", status: "partial", priority: "high", perPerson: false },
-        { name: "Multi-tool", quantity: "1", status: "ready", priority: "medium", perPerson: false },
+        { name: "Flashlight", quantity: "2", status: "missing", priority: "high", perPerson: false },
+        { name: "Battery-powered radio", quantity: "1", status: "missing", priority: "high", perPerson: false },
+        { name: "Extra batteries", quantity: "8 AA, 4 D", status: "missing", priority: "high", perPerson: false },
+        { name: "Multi-tool", quantity: "1", status: "missing", priority: "medium", perPerson: false },
         { name: "Duct tape", quantity: "1 roll", status: "missing", priority: "medium", perPerson: false },
         { name: "Plastic sheeting", quantity: "10 ft", status: "missing", priority: "medium", perPerson: false },
       ] as KitItem[]
@@ -77,10 +77,10 @@ export function EmergencyKit({ user }: EmergencyKitProps) {
     safety: {
       name: "Safety & Medical",
       items: [
-        { name: "First aid kit", quantity: "1 complete", status: "ready", priority: "high", perPerson: false },
-        { name: "Prescription medications", quantity: "7-day supply", status: "ready", priority: "high", perPerson: true },
-        { name: "Emergency blankets", quantity: "1", status: "partial", priority: "medium", perPerson: true },
-        { name: "Fire extinguisher", quantity: "1", status: "ready", priority: "medium", perPerson: false },
+        { name: "First aid kit", quantity: "1 complete", status: "missing", priority: "high", perPerson: false },
+        { name: "Prescription medications", quantity: "7-day supply", status: "missing", priority: "high", perPerson: true },
+        { name: "Emergency blankets", quantity: "1", status: "missing", priority: "medium", perPerson: true },
+        { name: "Fire extinguisher", quantity: "1", status: "missing", priority: "medium", perPerson: false },
         { name: "Smoke/CO detector batteries", quantity: "6", status: "missing", priority: "medium", perPerson: false },
       ] as KitItem[]
     }

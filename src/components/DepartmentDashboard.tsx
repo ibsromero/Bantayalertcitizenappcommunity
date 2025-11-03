@@ -241,35 +241,35 @@ export function DepartmentDashboard({ user, initialSection }: DepartmentDashboar
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-safe">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-2">{getRoleName()}</h1>
-            <p className="text-blue-100">Real-time disaster response coordination for NCR</p>
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2 truncate">{getRoleName()}</h1>
+            <p className="text-xs sm:text-sm text-blue-100">Real-time disaster response coordination for NCR</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={() => loadStats()}
               disabled={isLoading}
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 flex-1 sm:flex-none"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
             <div className="flex items-center space-x-2">
               {isLoading ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className="text-sm">Loading...</span>
+                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                  <span className="text-xs sm:text-sm hidden sm:inline">Loading...</span>
                 </>
               ) : (
                 <>
-                  <Activity className="h-5 w-5 animate-pulse" />
-                  <span className="text-sm">System Active</span>
+                  <Activity className="h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
+                  <span className="text-xs sm:text-sm hidden sm:inline">System Active</span>
                 </>
               )}
             </div>
@@ -304,19 +304,19 @@ export function DepartmentDashboard({ user, initialSection }: DepartmentDashboar
       )}
       
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {isLoading ? (
           // Loading skeleton
           Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-8 w-16" />
-                    <Skeleton className="h-3 w-32" />
+                    <Skeleton className="h-3 sm:h-4 w-20 sm:w-24" />
+                    <Skeleton className="h-6 sm:h-8 w-12 sm:w-16" />
+                    <Skeleton className="h-2 sm:h-3 w-24 sm:w-32" />
                   </div>
-                  <Skeleton className="h-12 w-12 rounded-lg" />
+                  <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg" />
                 </div>
               </CardContent>
             </Card>
@@ -332,15 +332,15 @@ export function DepartmentDashboard({ user, initialSection }: DepartmentDashboar
                 if (stat.id === "hospitals") setActiveTab("healthcare");
               }}
             >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-3xl font-bold mb-1">{stat.value}</p>
-                    <p className="text-xs text-gray-500">{stat.change}</p>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">{stat.label}</p>
+                    <p className="text-2xl sm:text-3xl font-bold mb-1">{stat.value}</p>
+                    <p className="text-xs text-gray-500 line-clamp-1">{stat.change}</p>
                   </div>
-                  <div className={`p-3 rounded-lg ${stat.color}`}>
-                    <stat.icon className="h-6 w-6 text-white" />
+                  <div className={`p-2 sm:p-3 rounded-lg ${stat.color} shrink-0`}>
+                    <stat.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
                 </div>
               </CardContent>
@@ -351,26 +351,26 @@ export function DepartmentDashboard({ user, initialSection }: DepartmentDashboar
 
       {/* Critical Alerts Banner */}
       <Card className="border-red-200 bg-red-50">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 animate-pulse" />
-            <div className="flex-1">
-              <h3 className="font-medium text-red-900">Critical Weather Alert - PAGASA</h3>
-              <p className="text-sm text-red-700 mt-1">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-3">
+            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 animate-pulse shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm sm:text-base font-medium text-red-900">Critical Weather Alert - PAGASA</h3>
+              <p className="text-xs sm:text-sm text-red-700 mt-1">
                 Tropical Depression Signal No. 2 affecting Metro Manila. Heavy rainfall and flooding expected.
               </p>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="border-red-300 text-red-700">
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Badge variant="outline" className="border-red-300 text-red-700 text-xs">
                   <Clock className="h-3 w-3 mr-1" />
                   Updated 5 mins ago
                 </Badge>
-                <Badge variant="outline" className="border-red-300 text-red-700">
+                <Badge variant="outline" className="border-red-300 text-red-700 text-xs">
                   <MapPin className="h-3 w-3 mr-1" />
                   All NCR Cities
                 </Badge>
               </div>
             </div>
-            <Button variant="destructive" size="sm">
+            <Button variant="destructive" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
               Broadcast Alert
             </Button>
           </div>
@@ -379,14 +379,18 @@ export function DepartmentDashboard({ user, initialSection }: DepartmentDashboar
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className={`grid w-full ${(user.departmentRole === "lgu" || user.departmentRole === "emergency_responder") ? 'grid-cols-5' : 'grid-cols-4'}`}>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsList className={`grid w-full ${(user.departmentRole === "lgu" || user.departmentRole === "emergency_responder") ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'} h-auto`}>
+          <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">Overview</TabsTrigger>
           {(user.departmentRole === "lgu" || user.departmentRole === "emergency_responder") && (
-            <TabsTrigger value="map">Emergency Map</TabsTrigger>
+            <TabsTrigger value="map" className="text-xs sm:text-sm py-2">
+              <span className="hidden sm:inline">Emergency </span>Map
+            </TabsTrigger>
           )}
-          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
-          <TabsTrigger value="sos">SOS Alerts</TabsTrigger>
-          <TabsTrigger value="healthcare">Healthcare</TabsTrigger>
+          <TabsTrigger value="monitoring" className="text-xs sm:text-sm py-2">
+            <span className="hidden sm:inline">Disaster </span>Monitoring
+          </TabsTrigger>
+          <TabsTrigger value="sos" className="text-xs sm:text-sm py-2">SOS<span className="hidden sm:inline"> Alerts</span></TabsTrigger>
+          <TabsTrigger value="healthcare" className="text-xs sm:text-sm py-2">Healthcare</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">

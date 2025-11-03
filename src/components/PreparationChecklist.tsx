@@ -27,36 +27,36 @@ export function PreparationChecklist({ user }: PreparationChecklistProps) {
   const [checklists, setChecklists] = useState({
     earthquake: {
       name: "Earthquake",
-      progress: 75,
+      progress: 0,
       items: [
-        { id: 1, text: "Secure heavy furniture and appliances", completed: true },
-        { id: 2, text: "Identify safe spots in each room", completed: true },
-        { id: 3, text: "Practice drop, cover, and hold on", completed: true },
+        { id: 1, text: "Secure heavy furniture and appliances", completed: false },
+        { id: 2, text: "Identify safe spots in each room", completed: false },
+        { id: 3, text: "Practice drop, cover, and hold on", completed: false },
         { id: 4, text: "Prepare emergency shut-off procedures", completed: false },
         { id: 5, text: "Create family communication plan", completed: false },
-        { id: 6, text: "Store emergency supplies in accessible location", completed: true },
+        { id: 6, text: "Store emergency supplies in accessible location", completed: false },
       ]
     },
     flood: {
       name: "Flood",
-      progress: 50,
+      progress: 0,
       items: [
-        { id: 1, text: "Know your evacuation routes", completed: true },
+        { id: 1, text: "Know your evacuation routes", completed: false },
         { id: 2, text: "Prepare sandbags and barriers", completed: false },
-        { id: 3, text: "Move important items to higher floors", completed: true },
+        { id: 3, text: "Move important items to higher floors", completed: false },
         { id: 4, text: "Review flood insurance policy", completed: false },
         { id: 5, text: "Install sump pump backup power", completed: false },
-        { id: 6, text: "Prepare waterproof document storage", completed: true },
+        { id: 6, text: "Prepare waterproof document storage", completed: false },
       ]
     },
     typhoon: {
       name: "Typhoon",
-      progress: 60,
+      progress: 0,
       items: [
-        { id: 1, text: "Install storm shutters or plywood", completed: true },
-        { id: 2, text: "Trim trees and remove loose outdoor items", completed: true },
+        { id: 1, text: "Install storm shutters or plywood", completed: false },
+        { id: 2, text: "Trim trees and remove loose outdoor items", completed: false },
         { id: 3, text: "Stock up on fuel and water", completed: false },
-        { id: 4, text: "Test generator and backup power", completed: true },
+        { id: 4, text: "Test generator and backup power", completed: false },
         { id: 5, text: "Review evacuation plan", completed: false },
         { id: 6, text: "Prepare cash in small bills", completed: false },
       ]

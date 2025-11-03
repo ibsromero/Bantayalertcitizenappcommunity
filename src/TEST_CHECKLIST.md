@@ -121,7 +121,7 @@
 - [ ] **EXPECTED**: Status updates immediately
 - [ ] **VERIFY**: Status updated in Supabase:
   ```sql
-  SELECT id, citizen_name, status FROM sos_alerts ORDER BY created_at DESC LIMIT 5;
+  SELECT id, user_name, status FROM sos_alerts ORDER BY created_at DESC LIMIT 5;
   ```
 
 ### Disaster Monitoring
@@ -239,11 +239,12 @@ SELECT 'evacuation_centers', COUNT(*) FROM evacuation_centers;
 ```sql
 SELECT 
   id,
-  citizen_name,
-  citizen_email,
-  citizen_phone,
-  emergency_type,
+  user_name,
+  user_email,
+  contact_number,
+  details,
   status,
+  priority,
   created_at
 FROM sos_alerts
 ORDER BY created_at DESC

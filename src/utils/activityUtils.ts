@@ -32,6 +32,7 @@ export async function logActivity(
       // Save directly to Supabase
       await logActivityToSupabase(user.id, {
         activity_type: type,
+        description: description,
         activity_description: description,
         metadata: { color: getActivityColor(type) }
       });
@@ -72,9 +73,9 @@ export async function logActivity(
  */
 export async function getActivities(): Promise<Activity[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (user) {
+    if (user && !error) {
       // Get from Supabase
       const logs = await getActivityLogs(user.id, 50);
       
@@ -82,8 +83,8 @@ export async function getActivities(): Promise<Activity[]> {
       return logs.map(log => ({
         id: log.id || '',
         type: log.activity_type,
-        description: log.activity_description,
-        timestamp: log.activity_timestamp ? new Date(log.activity_timestamp).getTime() : Date.now(),
+        description: log.description || log.activity_description || '',
+        timestamp: log.created_at ? new Date(log.created_at).getTime() : (log.activity_timestamp ? new Date(log.activity_timestamp).getTime() : Date.now()),
         color: log.metadata?.color || getActivityColor(log.activity_type)
       }));
     } else {

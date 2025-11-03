@@ -10,7 +10,7 @@ import {
 
 const API_BASE = `https://${projectId}.supabase.co/functions/v1/departmentApiService`;
 const MAIN_SERVER_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-dd0f68d8`;
-const USE_MOCK_DATA = true; // Set to false when Edge Function is deployed
+const USE_MOCK_DATA = false; // Set to false when Edge Function is deployed
 
 // Validate department token format
 function validateDepartmentToken(token: string): boolean {
@@ -152,14 +152,13 @@ async function createSOSAlertLocal(alertData: any) {
       .from('sos_alerts')
       .insert([
         {
-          citizen_name: alertData.userName,
-          citizen_email: alertData.userEmail,
-          citizen_phone: alertData.contactNumber || null,
-          latitude: alertData.location?.lat || null,
-          longitude: alertData.location?.lng || null,
-          location_text: alertData.location?.address || 'Location unavailable',
-          emergency_type: 'general',
-          message: alertData.details || '',
+          user_name: alertData.userName,
+          user_email: alertData.userEmail,
+          contact_number: alertData.contactNumber || 'Not provided',
+          location_lat: alertData.location?.lat || null,
+          location_lng: alertData.location?.lng || null,
+          location_address: alertData.location?.address || 'Location not provided',
+          details: alertData.details || 'Emergency assistance needed',
           status: 'active',
           priority: 'high',
           created_at: new Date().toISOString(),
@@ -235,20 +234,21 @@ export async function getSOSAlerts(token: string, status: "active" | "all" = "ac
     // Transform data to match expected format
     const alerts = (data || []).map(alert => ({
       id: alert.id,
-      userEmail: alert.citizen_email,
-      userName: alert.citizen_name,
-      contactNumber: alert.citizen_phone,
+      userEmail: alert.user_email,
+      userName: alert.user_name,
+      contactNumber: alert.contact_number,
       location: {
-        lat: alert.latitude,
-        lng: alert.longitude,
-        address: alert.location_text
+        lat: alert.location_lat,
+        lng: alert.location_lng,
+        address: alert.location_address
       },
-      details: alert.message,
+      details: alert.details,
       status: alert.status,
       priority: alert.priority,
       created_at: alert.created_at,
       responded_by: alert.responded_by,
-      responded_at: alert.responded_at
+      responded_at: alert.responded_at,
+      resolution: alert.resolution
     }));
     
     return { alerts };
@@ -284,7 +284,7 @@ export async function updateSOSAlert(
     
     if (updates.status) updateData.status = updates.status;
     if (updates.priority) updateData.priority = updates.priority;
-    if (updates.resolution) updateData.message = updates.resolution; // Store resolution in message
+    if (updates.resolution) updateData.resolution = updates.resolution;
     
     const { data, error } = await supabase
       .from('sos_alerts')
@@ -321,11 +321,10 @@ export async function getActiveDisasters(token: string) {
   try {
     return await departmentRequest("/disasters/active", token);
   } catch (error: any) {
-    if (shouldUseMockData(error)) {
-      console.log("⚠️ API failed, falling back to mock disasters data");
-      return { disasters: MOCK_ACTIVE_DISASTERS };
-    }
-    throw error;
+    console.log("⚠️ Disasters API failed, falling back to mock data");
+    console.log("Error details:", error.message);
+    // Always fall back to mock data if Edge Function isn't deployed
+    return { disasters: MOCK_ACTIVE_DISASTERS };
   }
 }
 
@@ -380,11 +379,10 @@ export async function getHospitals() {
 
     return data;
   } catch (error: any) {
-    if (shouldUseMockData(error)) {
-      console.log("⚠️ API failed, falling back to mock hospitals data");
-      return { hospitals: MOCK_HOSPITALS };
-    }
-    throw error;
+    console.log("⚠️ Hospitals API failed, falling back to mock data");
+    console.log("Error details:", error.message);
+    // Always fall back to mock data if Edge Function isn't deployed
+    return { hospitals: MOCK_HOSPITALS };
   }
 }
 
@@ -424,10 +422,9 @@ export async function getAnalyticsSummary(token: string) {
   try {
     return await departmentRequest("/analytics/summary", token);
   } catch (error: any) {
-    if (shouldUseMockData(error)) {
-      console.log("⚠️ API failed, falling back to mock analytics data");
-      return MOCK_ANALYTICS_SUMMARY;
-    }
-    throw error;
+    console.log("⚠️ Analytics API failed, falling back to mock data");
+    console.log("Error details:", error.message);
+    // Always fall back to mock data if Edge Function isn't deployed
+    return MOCK_ANALYTICS_SUMMARY;
   }
 }

@@ -174,9 +174,18 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
 
       if (error) {
         console.error("Signup error:", error);
-        toast.error("Signup failed", {
-          description: error instanceof Error ? error.message : "Could not create account. Please try again.",
-        });
+        
+        // Check if user already exists
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes("already registered") || errorMessage.includes("already exists")) {
+          toast.error("Account already exists", {
+            description: "An account with this email already exists. Please sign in instead.",
+          });
+        } else {
+          toast.error("Signup failed", {
+            description: errorMessage || "Could not create account. Please try again.",
+          });
+        }
       } else if (data?.user) {
         // Signup successful - check if we have a session (auto-confirm) or need email confirmation
         if (data.session) {
@@ -243,7 +252,7 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                       className="w-full"
                       onClick={() => {
                         setUserType("citizen");
-                        setLoginForm({ email: "demo@bantayalert.ph", password: "demo123" });
+                        setLoginForm({ email: "", password: "" });
                       }}
                     >
                       <UserCircle className="mr-2 h-4 w-4" />
@@ -255,9 +264,7 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                       className="w-full"
                       onClick={() => {
                         setUserType("department");
-                        // Auto-fill with default LGU credentials
-                        const creds = DEPARTMENT_CREDENTIALS.lgu;
-                        setLoginForm({ email: creds.email, password: creds.password });
+                        setLoginForm({ email: "", password: "" });
                       }}
                     >
                       <Building2 className="mr-2 h-4 w-4" />
@@ -272,9 +279,6 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                     <Label htmlFor="department-role">Department Role</Label>
                     <Select value={departmentRole} onValueChange={(value: DepartmentRole) => {
                       setDepartmentRole(value);
-                      // Auto-fill credentials when role changes
-                      const creds = DEPARTMENT_CREDENTIALS[value];
-                      setLoginForm({ email: creds.email, password: creds.password });
                     }}>
                       <SelectTrigger id="department-role">
                         <SelectValue placeholder="Select your department" />
@@ -287,29 +291,10 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">
-                      Credentials auto-filled for selected department
+                      Contact your department administrator for credentials
                     </p>
                   </div>
                 )}
-
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    {userType === "citizen" ? (
-                      <>Demo: Use <strong>demo@bantayalert.ph</strong> / <strong>demo123</strong></>
-                    ) : (
-                      <>
-                        {departmentRole && (
-                          <>
-                            <strong>{DEPARTMENT_CREDENTIALS[departmentRole].name}</strong><br />
-                            Email: <strong>{DEPARTMENT_CREDENTIALS[departmentRole].email}</strong><br />
-                            Password: <strong>{DEPARTMENT_CREDENTIALS[departmentRole].password}</strong>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </AlertDescription>
-                </Alert>
                 
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">

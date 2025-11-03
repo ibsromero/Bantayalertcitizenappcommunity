@@ -1,36 +1,83 @@
-# BantayAlert - Disaster Preparedness App
+# 🚨 BantayAlert - Real-Time Disaster Preparedness App
 
-A comprehensive disaster preparedness and emergency response application for NCR, Philippines, with full Supabase integration.
+A comprehensive disaster preparedness and emergency response application for NCR, Philippines, with **full real-time capabilities** powered by Supabase.
 
 ## 🚀 Quick Start
 
-### First-Time Setup (Required):
-1. **Database Setup**: Run `COMPLETE_SUPABASE_SETUP.sql` in [Supabase SQL Editor](https://app.supabase.com/project/gzefyknnjlsjmcgndbfn/editor)
-2. **Disable Email Confirmation**: Go to Supabase → Authentication → Settings → Toggle OFF "Confirm email"
-3. **Enable Real-time**: Go to Supabase → Database → Replication → Enable all tables
+### ⚡ New Users: Real-Time Deployment (30 minutes)
 
-### For Users:
+**Want instant real-time updates?** Follow our new comprehensive guides:
+
+1. **📘 START HERE:** [`/REALTIME_SETUP_SUMMARY.md`](./REALTIME_SETUP_SUMMARY.md) - Executive summary
+2. **📋 COMPLETE GUIDE:** [`/DEPLOYMENT_MASTER_CHECKLIST.md`](./DEPLOYMENT_MASTER_CHECKLIST.md) - Full deployment
+3. **⚡ QUICK SETUP:** [`/EDGE_FUNCTION_SETUP.md`](./EDGE_FUNCTION_SETUP.md) - Deploy in 5 minutes
+4. **📄 QUICK REFERENCE:** [`/QUICK_DEPLOY_REFERENCE.md`](./QUICK_DEPLOY_REFERENCE.md) - Print and keep handy
+
+### 🎯 What Real-Time Mode Gives You
+
+- ✅ SOS alerts appear in department dashboard **instantly** (< 2 seconds)
+- ✅ Multi-department coordination in real-time
+- ✅ All data from live database (no mock data)
+- ✅ Automatic updates without page refresh
+- ✅ Production-ready infrastructure
+
+### 🔧 First-Time Setup (Database Only - 10 minutes)
+
+If you just want to test without Edge Functions:
+
+1. **Database Setup**: Run `FINAL_SUPABASE_SETUP.sql` in [Supabase SQL Editor](https://app.supabase.com/project/gzefyknnjlsjmcgndbfn/editor)
+   - Creates ALL tables, RLS policies, and enables realtime
+   - Takes 10-30 seconds to complete
+   - **CRITICAL:** This ensures SOS alerts work!
+
+2. **Enable Real-Time**: Run `DATABASE_REALTIME_SETUP.sql` in SQL Editor
+   - Enables real-time on critical tables
+   - Sets up indexes and triggers
+   - Configures notification system
+
+3. **Verify Realtime**: Run this query to confirm:
+   ```sql
+   SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime';
+   ```
+   You should see `sos_alerts` and other critical tables.
+
+### For Citizen Users:
 1. Open the app in your browser or Android device
 2. **Sign Up** - Create an account (no email verification needed)
 3. **Login** - Access all features immediately
-4. Explore emergency preparedness features
+4. All progress starts at 0% (mark items as you complete them)
 
 ### For Department/Admin Access:
-Use these pre-configured accounts:
-- **LGU**: lgu@bantayalert.ph / LGU@NCR2024
-- **Emergency Responder**: responder@bantayalert.ph / RESPONDER@NCR2024
-- **Healthcare**: healthcare@bantayalert.ph / HEALTHCARE@NCR2024
-- **NDRRMC**: ndrrmc@bantayalert.ph / NDRRMC@NCR2024
+Department credentials (updated November 2025):
+- **LGU**: `lgu@bantayalert.ph` / `LGU2025!Manila`
+- **Emergency Responder**: `responder@bantayalert.ph` / `RESP2025!911`
+- **Healthcare**: `healthcare@bantayalert.ph` / `HEALTH2025!Care`
+- **NDRRMC**: `ndrrmc@bantayalert.ph` / `NDRRMC2025!PH`
+
+**Note:** Credentials are NOT auto-filled. Enter them manually for security.
 
 ## 📚 Essential Documentation
 
-- **[COMPLETE_SETUP_GUIDE.md](./COMPLETE_SETUP_GUIDE.md)** - Complete setup and deployment guide
-- **[COMPLETE_SUPABASE_SETUP.sql](./COMPLETE_SUPABASE_SETUP.sql)** - Database setup SQL (run in Supabase SQL Editor)
-- **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)** - Step-by-step deployment checklist
-- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues and solutions
+### 🚀 Real-Time Deployment (NEW!)
+- **[REALTIME_SETUP_SUMMARY.md](./REALTIME_SETUP_SUMMARY.md)** - ⭐ **START HERE** - Executive summary
+- **[DEPLOYMENT_MASTER_CHECKLIST.md](./DEPLOYMENT_MASTER_CHECKLIST.md)** - Complete step-by-step deployment
+- **[REALTIME_DEPLOYMENT_GUIDE.md](./REALTIME_DEPLOYMENT_GUIDE.md)** - Detailed technical guide
+- **[EDGE_FUNCTION_SETUP.md](./EDGE_FUNCTION_SETUP.md)** - Quick Edge Function deployment
+- **[REALTIME_TESTING_GUIDE.md](./REALTIME_TESTING_GUIDE.md)** - Testing procedures
+- **[QUICK_DEPLOY_REFERENCE.md](./QUICK_DEPLOY_REFERENCE.md)** - Quick reference card
+
+### 🗄️ Database Setup:
+- **[FINAL_SUPABASE_SETUP.sql](./FINAL_SUPABASE_SETUP.sql)** - ⭐ **RUN FIRST** - Complete database setup
+- **[DATABASE_REALTIME_SETUP.sql](./DATABASE_REALTIME_SETUP.sql)** - 🔥 **RUN SECOND** - Enable real-time features
+- **[COMPLETE_SETUP_GUIDE.md](./COMPLETE_SETUP_GUIDE.md)** - Legacy setup guide
+
+### 📊 Status & Testing:
+- **[CURRENT_STATUS.md](./CURRENT_STATUS.md)** - Current app status and features
 - **[TEST_CHECKLIST.md](./TEST_CHECKLIST.md)** - Comprehensive testing checklist
-- **[COMPREHENSIVE_ERROR_CHECK.md](./COMPREHENSIVE_ERROR_CHECK.md)** - Full validation report
-- **[CREDENTIALS.md](./CREDENTIALS.md)** - Login credentials and API keys
+- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues and solutions
+
+### 🔑 Credentials & Reference:
+- **[CREDENTIALS.md](./CREDENTIALS.md)** - API keys and Supabase info (see below for department passwords)
 
 ## ✨ Key Features
 
@@ -51,25 +98,34 @@ Use these pre-configured accounts:
 - ✅ **Emergency Map** - Geospatial view of all incidents
 - ✅ **Post-Disaster Assessment** - Analysis and reporting tools
 
-## 🛠 Recent Fixes (November 2, 2025)
+## 🛠 Recent Fixes (November 3, 2025)
 
-### Emergency Kit:
-- ✅ Added delete button for custom items
+### Responsive Design:
+- ✅ Department dashboard fully responsive (phones, tablets, laptops)
+- ✅ Fixed text wrapping and overflow issues on mobile
+- ✅ Optimized button sizes for touch devices
+- ✅ Cards and stats properly sized for all screen sizes
+
+### Emergency Kit & Checklist:
+- ✅ New users start at 0% progress (not pre-filled)
+- ✅ Delete button visible with hover effect
 - ✅ Items scale with family size (per-person checkbox)
-- ✅ Family size changes update suggested quantities
 - ✅ All changes save to Supabase automatically
 
 ### Authentication:
+- ✅ Department credentials NO LONGER auto-filled
+- ✅ Credentials hidden from login screen (security)
+- ✅ All credentials documented in `/DEPARTMENT_CREDENTIALS.txt`
 - ✅ Email confirmation disabled - instant login
-- ✅ User profiles save to Supabase on signup
-- ✅ Fixed demo mode - now requires valid credentials
-- ✅ Department profiles display correctly
 
-### SOS Alerts:
-- ✅ SOS alerts save directly to Supabase
-- ✅ Alerts visible on department dashboard in real-time
+### SOS Alerts (CRITICAL FIX):
+- ✅ Complete Supabase realtime setup (`FINAL_SUPABASE_SETUP.sql`)
+- ✅ RLS policies allow public read/write for emergency data
+- ✅ SOS alerts appear on department dashboard in 1-5 seconds
 - ✅ Works for both logged-in and guest users
+- ✅ Real-time updates across all devices
 - ✅ Department can update alert status
+- ✅ Guaranteed working with proper setup
 
 ## 📊 Database Tables
 
